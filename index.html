@@ -3,29 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <title>Пример Loading + Свинка</title>
+  <!-- Подключаем пиксельный шрифт -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+  />
   <style>
-    /* Убираем отступы, чтобы страница занимала весь экран */
+    /* Убираем отступы, прокрутку и задаём шрифт по умолчанию */
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
+      overflow: hidden; /* Запрещаем прокрутку */
       font-family: Arial, sans-serif;
     }
 
-    /* Экран загрузки: коричневый фон, центрируем текст */
+    /* Фон для блока Loading (повторяющийся «пиксельный» узор) */
+    /* Данный Base64 — это маленькая картинка ~8x8 */
     .loading-screen {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background-color: #8B4513; /* коричневый цвет */
       color: #ffffff;
       flex-direction: column;
+      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAAByMZS7AAAAL0lEQVR42mNk+P+fAwMDf0BS0BDQwMDA/qMzyP9/QHT1X9EEKWChU8FCwQDTlAsPYpF+v8iAADyLhRtNoGkJAAAAABJRU5ErkJggg==");
+      background-repeat: repeat;
+      /* Увеличим «пиксельный» узор, чтобы был заметнее */
+      background-size: 32px 32px;
     }
 
-    /* Анимированный текст "Loading..." */
+    /* Анимированный текст "Loading..." в стиле пиксельного шрифта */
     .loading-text {
       font-size: 2rem;
+      font-family: 'Press Start 2P', monospace; /* Меняем шрифт */
       animation: bounce 1.5s infinite;
     }
 
@@ -47,7 +58,7 @@
       display: none;
     }
 
-    /* Экран с "свинкой" */
+    /* Экран со свинкой */
     .pig-screen {
       display: flex;
       justify-content: center;
@@ -65,7 +76,9 @@
     .pig-image {
       width: 150px; /* можно изменить размер */
       height: auto;
-      image-rendering: pixelated; /* сохранение «пиксельного» вида, если нужно */
+      /* Если нужно «пиксельное» масштабирование — оставьте:
+         image-rendering: pixelated; 
+         Иначе можно убрать, если картинка не пиксель-арт */
     }
 
     .pig-speech {
@@ -85,7 +98,7 @@
   <!-- Экран со свинкой -->
   <div class="pig-screen hidden" id="pigScreen">
     <div class="pig-container">
-      <!-- Изображение свинки из файла pig223.jpg -->
+      <!-- Изображение свинки pig223.jpg -->
       <img
         src="pig223.jpg"
         alt="Cartoon Pig"
