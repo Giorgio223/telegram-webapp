@@ -2,126 +2,204 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Пример Loading + Свинка</title>
-  <!-- Подключаем пиксельный шрифт -->
+  <title>Свинка-бегун</title>
+  <!-- Подключим пиксельный шрифт для атмосферы (опционально) -->
   <link
     rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
   />
   <style>
-    /* Убираем отступы, прокрутку, задаём 100% высоты */
+    /* Сброс отступов, 100% высота, запрет скролла */
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      overflow: hidden; /* Запрещаем прокрутку */
+      overflow: hidden;
+      background-color: #a2d9ff; /* Небесный цвет, если захотите */
+      font-family: Arial, sans-serif;
     }
 
-    /* Общий фон для экрана Loading (пиксельный узор) */
-    .loading-screen {
+    /* Верхняя полоса для TON баланса */
+    .top-bar {
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: 0;
+      height: 50px;
+      background: #333;
+      color: #fff;
       display: flex;
-      justify-content: center;
+      justify-content: flex-end;
       align-items: center;
-      flex-direction: column;
+      padding: 0 20px;
+      box-sizing: border-box;
+      z-index: 10;
+    }
+    .top-bar .ton-balance {
+      font-family: 'Press Start 2P', monospace; /* пиксельный стиль, можно убрать */
+      font-size: 0.9rem;
+    }
 
+    /* «Пол» внизу: пиксельный узор */
+    .floor {
+      position: absolute;
+      bottom: 0;
+      left: 0;
       width: 100%;
-      height: 100%;
-
-      /* Коричневый «пиксельный» фон */
-      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAAByMZS7AAAAL0lEQVR42mNk+P+fAwMDf0BS0BDQwMDA/qMzyP9/QHT1X9EEKWChU8FCwQDTlAsPYpF+v8iAADyLhRtNoGkJAAAAABJRU5ErkJggg==");
+      height: 80px;
+      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAQAAADZ9HSAAAAAJ0lEQVR42mNk+P9pgGFkMFAwgELg4uDjAkJ04+JDHNFdQHAH6HkHYURX8EAAAAASUVORK5CYII=");
+      /* Это 4×4 пиксельная текстура (коричневатая),
+         при желании можете заменить на свой Base64 */
       background-repeat: repeat;
-      background-size: 32px 32px;
+      background-size: 32px 32px; /* Увеличим пиксели до крупного размера */
+      z-index: 9;
     }
 
-    /* Стиль для текста "Loading..." */
-    .loading-text {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 2rem;
-      white-space: nowrap; /* не переносить слово на следующую строку */
-      color: #ffffff;
-      animation: bounce 1.5s infinite;
-      margin: 0 1rem;
-      text-align: center;
-    }
-
-    /* Анимация "прыжка" */
-    @keyframes bounce {
-      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-      40% { transform: translateY(-20px); }
-      60% { transform: translateY(-10px); }
-    }
-
-    /* Адаптивная подстройка для очень узких экранов (смартфоны) */
-    @media (max-width: 400px) {
-      .loading-text {
-        font-size: 1.3rem;
-      }
-    }
-
-    /* Чтобы скрывать блок загрузки после таймера */
-    .hidden {
-      display: none;
-    }
-
-    /* Экран со свинкой */
-    .pig-screen {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
+    /* Контейнер, в котором «бегает» свинка */
+    .game-area {
+      position: absolute;
+      top: 50px; /* ниже верхней полосы */
+      left: 0;
       width: 100%;
-      height: 100%;
-      background-color: #f0f0f0;
-      font-family: Arial, sans-serif; /* Можно другой шрифт для контента */
+      height: calc(100% - 50px - 80px); /* вычитаем высоту top-bar и пола */
+      overflow: hidden; /* Не даём свинке «выйти» за границы видимой области */
     }
 
-    .pig-container {
-      text-align: center;
+    /* Свинка со своим облачком — позиционируем абсолютно, чтобы бегать */
+    .pig {
+      position: absolute;
+      width: 100px; /* Ширина контейнера под свинку и «облачко» */
+      height: 100px;
+      transform: translate(-50%, -50%); /* Чтобы свинка была по центру точки */
+      /* Примерно по центру изначально */
+      top: 50%;
+      left: 50%;
     }
-
-    .pig-image {
-      width: 150px; /* меняйте под нужный размер */
-      height: auto;
-      image-rendering: pixelated; /* оставлять эффект пикселей, если нужно */
+    /* Картинка свинки */
+    .pig img {
       display: block;
+      width: 80px; 
+      height: auto;
       margin: 0 auto;
     }
 
-    .pig-speech {
-      font-size: 1.8rem;
+    /* Облачко речи (в стиле комиксов) */
+    .speech-bubble {
+      position: absolute;
+      bottom: 100%; /* Облачко над свинкой */
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      padding: 4px 8px;
+      border: 2px solid #333;
+      border-radius: 8px;
+      font-size: 0.9rem;
       color: #333;
-      margin-top: 1rem;
+      white-space: nowrap;
+      font-family: 'Press Start 2P', monospace;
+    }
+    .speech-bubble::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #fff; /* Цвет фона облачка */
+    }
+
+    /* Нижняя панель с кнопками (депозит, вывод, корм) */
+    .bottom-menu {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 80px;
+      background: #eee;
+      border-top: 2px solid #ccc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 11;
+    }
+    .bottom-menu button {
+      margin: 0 10px;
+      padding: 8px 16px;
+      font-size: 1rem;
+      cursor: pointer;
+      border: 2px solid #999;
+      background: #fff;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .bottom-menu button:hover {
+      background: #ffd;
+      transform: scale(1.05);
     }
   </style>
 </head>
 <body>
 
-  <!-- Экран загрузки -->
-  <div class="loading-screen" id="loadingScreen">
-    <div class="loading-text">Loading...</div>
+  <!-- Верхняя полоса: баланс TON -->
+  <div class="top-bar">
+    <div class="ton-balance">TON: 0.00</div>
   </div>
 
-  <!-- Экран со свинкой -->
-  <div class="pig-screen hidden" id="pigScreen">
-    <div class="pig-container">
-      <!-- Если картинка в папке images1, укажите путь: images1/pig223.jpg -->
-      <img
-        src="images1/pig223.jpg"
-        alt="Cartoon Pig"
-        class="pig-image"
-      />
-      <p class="pig-speech">Привет!</p>
+  <!-- Игровая область, где бегает свинка -->
+  <div class="game-area" id="gameArea">
+    <!-- Свинка с облачком -->
+    <div class="pig" id="pig">
+      <div class="speech-bubble">Привет!</div>
+      <img src="images1/pig223.png" alt="Pig" />
     </div>
   </div>
 
-  <script>
-    // Через 2 секунды скрываем экран загрузки и показываем свинку
-    setTimeout(() => {
-      document.getElementById('loadingScreen').classList.add('hidden');
-      document.getElementById('pigScreen').classList.remove('hidden');
-    }, 2000); // 2 секунды
-  </script>
+  <!-- «Пол» внизу (пиксельная текстура) -->
+  <div class="floor"></div>
 
+  <!-- Нижняя панель с кнопками -->
+  <div class="bottom-menu">
+    <button id="depositBtn">Депозит</button>
+    <button id="withdrawBtn">Вывод</button>
+    <button id="feedBtn">Корм</button>
+  </div>
+
+  <script>
+    // ПОЛУЧАЕМ элементы
+    const pig = document.getElementById('pig');
+    const gameArea = document.getElementById('gameArea');
+
+    // Размеры pig, чтобы учесть при позиционировании
+    const pigWidth = 100;  // совпадает с .pig { width: 100px; }
+    const pigHeight = 100; // то же
+
+    // Функция случайной "пробежки" свинки
+    function movePigRandomly() {
+      // размеры области
+      const areaWidth = gameArea.clientWidth;
+      const areaHeight = gameArea.clientHeight;
+      // Случайная позиция (не выходить за границы)
+      const newX = Math.floor(Math.random() * (areaWidth - pigWidth)) + pigWidth / 2;
+      const newY = Math.floor(Math.random() * (areaHeight - pigHeight)) + pigHeight / 2;
+      // Устанавливаем через style
+      pig.style.left = newX + 'px';
+      pig.style.top = newY + 'px';
+    }
+
+    // Каждые 2 секунды — телепорт свинки
+    setInterval(movePigRandomly, 2000);
+
+    // Пока что кнопки "Депозит", "Вывод", "Корм" не делают ничего
+    // Можно добавить логику:
+    document.getElementById('depositBtn').addEventListener('click', () => {
+      alert('Здесь будет логика депозита TON.');
+    });
+    document.getElementById('withdrawBtn').addEventListener('click', () => {
+      alert('Здесь будет логика вывода TON.');
+    });
+    document.getElementById('feedBtn').addEventListener('click', () => {
+      alert('Свинка довольна кормом!');
+    });
+  </script>
 </body>
 </html>
