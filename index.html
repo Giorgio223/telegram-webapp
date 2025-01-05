@@ -130,7 +130,7 @@
       width: 200px; /* Увеличенный размер свинки */
       height: 200px; /* Высота контейнера свинки */
       background: url("images1/pig223.png") 0 0 no-repeat;
-      background-size: cover; 
+      background-size: 400px 200px; /* Предполагаем 2 кадра по 200px */
       transform: translate(-50%, -50%);
       transition: top 6s linear; /* Медленное вертикальное перемещение */
       animation: walk 1s steps(2) infinite; /* Анимация шага */
@@ -178,7 +178,7 @@
       bottom: 0; left: 0; 
       width: 100%;
       height: 80px;
-      background: #8B4513; /* Коричневый фон */
+      background: #A0522D; /* Коричневый фон */
       border-top: 2px solid #6F4E37;
       display: flex;
       justify-content: center;
@@ -191,7 +191,7 @@
       padding: 12px 24px;
       cursor: pointer;
       border: 2px solid #5C3317;
-      background: #A0522D; /* Более светлый коричневый */
+      background: #8B4513; /* Более темный коричневый */
       color: #ffffff; /* Белые буквы */
       font-family: 'Press Start 2P', monospace;
       transition: background 0.2s, transform 0.2s;
@@ -214,6 +214,7 @@
       .pig {
         width: 120px;
         height: 120px;
+        background-size: 240px 120px; /* Подгонка для меньших размеров */
         animation: walk 0.5s steps(2) infinite;
       }
       .bowl {
@@ -320,6 +321,16 @@
         }
       }
 
+      // Показываем сохранённый адрес кошелька
+      alert(`Ваш TON-кошелек: ${userWallet}`);
+
+      // Запрашиваем username для комментария
+      const username = prompt('Введите ваш username для комментария к переводу:');
+      if (!username) {
+        alert('Вы не ввели username.');
+        return;
+      }
+
       // Запрашиваем сумму депозита (максимум 0.5 TON)
       const amountStr = prompt('Введите сумму депозита (макс 0.5 TON):', '0.5');
       if (!amountStr) return; // Пользователь отменил
@@ -334,9 +345,12 @@
         return;
       }
 
-      // Имитация процесса оплаты
-      const confirmed = confirm(`Оплатить ${amount} TON на кошелёк ${userWallet}?`);
+      // Имитация процесса оплаты через Telegram
+      // В реальном приложении здесь должна быть интеграция с Telegram Payments API и серверная логика
+      const confirmed = confirm(`Оплатить ${amount} TON на кошелёк ${userWallet} с комментарием "${username}"?`);
       if (confirmed) {
+        // Здесь должна быть проверка успешности транзакции через сервер
+        // Для демонстрации увеличиваем баланс
         tonBalance += amount;
         updateBalance();
         alert(`Депозит успешно завершён. Баланс: ${tonBalance.toFixed(2)} TON.`);
@@ -347,6 +361,12 @@
 
     // Обработчик кнопки Вывод
     withdrawBtn.addEventListener('click', () => {
+      // Проверяем, есть ли кошелек
+      if (!userWallet) {
+        alert('Сначала внесите депозит, чтобы задать TON-кошелек.');
+        return;
+      }
+
       // Запрашиваем сумму вывода
       const amountStr = prompt('Введите сумму для вывода TON:');
       if (!amountStr) return; // Пользователь отменил
@@ -361,9 +381,12 @@
         return;
       }
 
-      // Имитация процесса вывода
+      // Имитация процесса вывода через Telegram
+      // В реальном приложении здесь должна быть интеграция с серверной логикой и TON API
       const confirmed = confirm(`Вывести ${amount} TON на кошелёк ${userWallet}?`);
       if (confirmed) {
+        // Здесь должна быть проверка успешности транзакции через сервер
+        // Для демонстрации уменьшаем баланс
         tonBalance -= amount;
         updateBalance();
         alert(`Вывод успешно завершён. Баланс: ${tonBalance.toFixed(2)} TON.`);
@@ -436,9 +459,47 @@
     }
 
     /************************************************
-     * 4. Управление исчезновением "Привет!"
+     * 4. Кнопка копирования адреса кошелька
      ************************************************/
-    // Уже реализовано через CSS-анимацию fadeOut в классе .speech-bubble
+    // Добавим кнопку копирования рядом с балансом
+    const topBar = document.querySelector('.top-bar');
+    const copyBtn = document.createElement('button');
+    copyBtn.textContent = 'Копировать адрес';
+    copyBtn.style.marginLeft = '10px';
+    copyBtn.style.padding = '6px 12px';
+    copyBtn.style.cursor = 'pointer';
+    copyBtn.style.border = '2px solid #888';
+    copyBtn.style.background = '#555555';
+    copyBtn.style.color = '#ffffff';
+    copyBtn.style.fontFamily = "'Press Start 2P', monospace";
+    copyBtn.style.fontSize = '0.6rem';
+    copyBtn.style.transition = 'background 0.2s, transform 0.2s';
+
+    copyBtn.addEventListener('mouseenter', () => {
+      copyBtn.style.background = '#777777';
+      copyBtn.style.transform = 'scale(1.05)';
+    });
+    copyBtn.addEventListener('mouseleave', () => {
+      copyBtn.style.background = '#555555';
+      copyBtn.style.transform = 'scale(1)';
+    });
+
+    topBar.appendChild(copyBtn);
+
+    copyBtn.addEventListener('click', () => {
+      if (userWallet) {
+        navigator.clipboard.writeText(userWallet)
+          .then(() => {
+            alert('Адрес кошелька скопирован в буфер обмена!');
+          })
+          .catch(err => {
+            alert('Не удалось скопировать адрес.');
+            console.error('Ошибка копирования: ', err);
+          });
+      } else {
+        alert('Сначала внесите депозит, чтобы задать TON-кошелек.');
+      }
+    });
   </script>
 
 </body>
