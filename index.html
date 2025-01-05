@@ -90,10 +90,10 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: url("images1/floor.png") repeat;
+      background: url("images1/floor.png") no-repeat center center;
       background-size: cover; /* Покрывает весь фон */
       z-index: 1;
-      opacity: 0.8; /* Немного прозрачности для лучшей видимости элементов */
+      opacity: 1; /* Полная непрозрачность для четкости */
     }
 
     /************************************************
@@ -134,6 +134,8 @@
       transform: translate(-50%, -50%);
       transition: top 6s linear; /* Медленное вертикальное перемещение */
       animation: walk 1s steps(2) infinite; /* Анимация шага */
+      left: 50%; /* Фиксированная горизонтальная позиция */
+      top: 50%; /* Начальная вертикальная позиция */
     }
     @keyframes walk {
       0%   { background-position-x: 0; }
@@ -238,6 +240,60 @@
         font-size: 0.6rem;
       }
     }
+
+    /* Модальное окно для депозита */
+    .modal {
+      display: none; /* Скрыто по умолчанию */
+      position: fixed; /* Остаётся на месте */
+      z-index: 1000; /* Над всеми элементами */
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto; /* Включить прокрутку при необходимости */
+      background-color: rgba(0,0,0,0.5); /* Чёрный фон с прозрачностью */
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto; /* Центрирование модала */
+      padding: 20px;
+      border: 2px solid #888;
+      width: 80%;
+      max-width: 400px; /* Максимальная ширина */
+      font-family: 'Press Start 2P', monospace;
+      position: relative;
+      text-align: center;
+    }
+    .close {
+      color: #aaaaaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      cursor: pointer;
+    }
+    .close:hover,
+    .close:focus {
+      color: #000;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .copy-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #8B4513;
+      color: #ffffff;
+      border: none;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background-color 0.2s, transform 0.2s;
+    }
+    .copy-btn:hover {
+      background-color: #A0522D;
+      transform: scale(1.05);
+    }
   </style>
 </head>
 <body>
@@ -250,7 +306,6 @@
   <!-- 2. Верхняя панель с балансом TON -->
   <div class="top-bar">
     <div class="balance-container">
-      <span>Баланс:</span>
       <img src="images1/ton.png" alt="TON" class="ton-icon"/>
       <span id="tonBalanceSpan">0</span>
     </div>
@@ -272,6 +327,15 @@
     <button id="depositBtn">Депозит <img src="images1/ton.png" alt="TON"/></button>
     <button id="withdrawBtn">Вывод <img src="images1/ton.png" alt="TON"/></button>
     <button id="feedBtn">Корм <img src="images1/ton.png" alt="TON"/></button>
+  </div>
+
+  <!-- 6. Модальное окно для депозита -->
+  <div id="depositModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <p>Нажмите кнопку скопировать чтобы пополнить баланс, а также не забудьте в комментарии в переводе написать ваш юзернейм в телеграме.</p>
+      <button class="copy-btn" id="copyAddressBtn">Копировать адрес</button>
+    </div>
   </div>
 
   <script>
@@ -308,55 +372,9 @@
 
     // Обработчик кнопки Депозит
     depositBtn.addEventListener('click', () => {
-      // Если кошелек не введён, запрашиваем его
-      if (!userWallet) {
-        const wallet = prompt('Введите свой TON-кошелек:');
-        if (wallet) {
-          userWallet = wallet;
-          localStorage.setItem('userWallet', wallet);
-          alert(`Кошелек сохранён: ${userWallet}`);
-        } else {
-          alert('Вы не ввели кошелёк.');
-          return;
-        }
-      }
-
-      // Показываем сохранённый адрес кошелька
-      alert(`Ваш TON-кошелек: ${userWallet}`);
-
-      // Запрашиваем username для комментария
-      const username = prompt('Введите ваш username для комментария к переводу:');
-      if (!username) {
-        alert('Вы не ввели username.');
-        return;
-      }
-
-      // Запрашиваем сумму депозита (максимум 0.5 TON)
-      const amountStr = prompt('Введите сумму депозита (макс 0.5 TON):', '0.5');
-      if (!amountStr) return; // Пользователь отменил
-
-      let amount = parseFloat(amountStr);
-      if (isNaN(amount) || amount <= 0) {
-        alert('Некорректная сумма.');
-        return;
-      }
-      if (amount > 0.5) {
-        alert('Максимум 0.5 TON.');
-        return;
-      }
-
-      // Имитация процесса оплаты через Telegram
-      // В реальном приложении здесь должна быть интеграция с Telegram Payments API и серверная логика
-      const confirmed = confirm(`Оплатить ${amount} TON на кошелёк ${userWallet} с комментарием "${username}"?`);
-      if (confirmed) {
-        // Здесь должна быть проверка успешности транзакции через сервер
-        // Для демонстрации увеличиваем баланс
-        tonBalance += amount;
-        updateBalance();
-        alert(`Депозит успешно завершён. Баланс: ${tonBalance.toFixed(2)} TON.`);
-      } else {
-        alert('Депозит отменён.');
-      }
+      // Открываем модальное окно
+      const modal = document.getElementById('depositModal');
+      modal.style.display = "block";
     });
 
     // Обработчик кнопки Вывод
@@ -438,12 +456,12 @@
       // Генерируем случайные координаты (только вертикально)
       let newY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
 
-      // Получаем текущую X позицию свинки
-      const currentX = parseInt(pig.style.left);
+      // Получаем текущую X позицию свинки (фиксирована)
+      const currentX = areaRect.width / 2; // 50% от ширины gameArea
 
       // Проверяем, не пересекается ли новая позиция с миской
-      const bowlCenterX = bowlRect.left + bowlRect.width / 2 - gameArea.getBoundingClientRect().left;
-      const bowlCenterY = bowlRect.top + bowlRect.height / 2 - gameArea.getBoundingClientRect().top;
+      const bowlCenterX = bowlRect.left + bowlRect.width / 2 - areaRect.left;
+      const bowlCenterY = bowlRect.top + bowlRect.height / 2 - areaRect.top;
       const distance = Math.hypot(currentX - bowlCenterX, newY - bowlCenterY);
 
       const minDistance = (bowlRect.width / 2) + (pigWidth / 2) + 20; // 20px отступ
@@ -459,45 +477,87 @@
     }
 
     /************************************************
-     * 4. Кнопка копирования адреса кошелька
+     * 4. Модальное окно для депозита
      ************************************************/
-    // Добавим кнопку копирования рядом с балансом
-    const topBar = document.querySelector('.top-bar');
-    const copyBtn = document.createElement('button');
-    copyBtn.textContent = 'Копировать адрес';
-    copyBtn.style.marginLeft = '10px';
-    copyBtn.style.padding = '6px 12px';
-    copyBtn.style.cursor = 'pointer';
-    copyBtn.style.border = '2px solid #888';
-    copyBtn.style.background = '#555555';
-    copyBtn.style.color = '#ffffff';
-    copyBtn.style.fontFamily = "'Press Start 2P', monospace";
-    copyBtn.style.fontSize = '0.6rem';
-    copyBtn.style.transition = 'background 0.2s, transform 0.2s';
+    const modal = document.getElementById('depositModal');
+    const closeModal = document.getElementById('closeModal');
+    const copyAddressBtn = document.getElementById('copyAddressBtn');
 
-    copyBtn.addEventListener('mouseenter', () => {
-      copyBtn.style.background = '#777777';
-      copyBtn.style.transform = 'scale(1.05)';
+    // Адрес кошелька
+    const walletAddress = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
+
+    // Обработчик закрытия модального окна
+    closeModal.onclick = function() {
+      modal.style.display = "none";
+    }
+
+    // Обработчик клика вне модального окна для закрытия
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+
+    // Обработчик кнопки копирования адреса
+    copyAddressBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(walletAddress)
+        .then(() => {
+          alert('Адрес кошелька скопирован в буфер обмена!');
+        })
+        .catch(err => {
+          alert('Не удалось скопировать адрес.');
+          console.error('Ошибка копирования: ', err);
+        });
     });
-    copyBtn.addEventListener('mouseleave', () => {
-      copyBtn.style.background = '#555555';
-      copyBtn.style.transform = 'scale(1)';
-    });
 
-    topBar.appendChild(copyBtn);
+    /************************************************
+     * 5. Сохранение кошелька при депозите
+     ************************************************/
+    // В предыдущем коде при депозите кошелек сохраняется только при первом вводе
+    // Добавим сохранение кошелька после подтверждения депозита
 
-    copyBtn.addEventListener('click', () => {
-      if (userWallet) {
-        navigator.clipboard.writeText(userWallet)
-          .then(() => {
-            alert('Адрес кошелька скопирован в буфер обмена!');
-          })
-          .catch(err => {
-            alert('Не удалось скопировать адрес.');
-            console.error('Ошибка копирования: ', err);
-          });
+    // Обработчик клика на кнопку "Копировать адрес" в модале
+    copyAddressBtn.addEventListener('click', () => {
+      // Предполагаем, что пользователь перевел средства и указал свой username
+      // В реальной интеграции сервер проверит транзакцию и обновит баланс
+
+      // Запрашиваем username
+      const username = prompt('Введите ваш username в Telegram для комментария к переводу:');
+      if (!username) {
+        alert('Вы не ввели username.');
+        return;
+      }
+
+      // Имитация успешного депозита
+      const amountStr = prompt('Введите сумму депозита (макс 0.5 TON):', '0.5');
+      if (!amountStr) return; // Пользователь отменил
+
+      let amount = parseFloat(amountStr);
+      if (isNaN(amount) || amount <= 0) {
+        alert('Некорректная сумма.');
+        return;
+      }
+      if (amount > 0.5) {
+        alert('Максимум 0.5 TON.');
+        return;
+      }
+
+      const confirmed = confirm(`Вы перевели ${amount} TON на кошелёк ${walletAddress} с комментарием "${username}". Подтверждаете пополнение баланса?`);
+      if (confirmed) {
+        // Сохраняем кошелек, если еще не сохранен
+        if (!userWallet) {
+          userWallet = walletAddress;
+          localStorage.setItem('userWallet', userWallet);
+        }
+
+        // Обновляем баланс
+        tonBalance += amount;
+        updateBalance();
+
+        alert(`Баланс успешно пополнен на ${amount} TON. Текущий баланс: ${tonBalance.toFixed(2)} TON.`);
+        modal.style.display = "none";
       } else {
-        alert('Сначала внесите депозит, чтобы задать TON-кошелек.');
+        alert('Пополнение баланса отменено.');
       }
     });
   </script>
