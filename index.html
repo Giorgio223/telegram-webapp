@@ -84,9 +84,16 @@
     /************************************************
      * 3. Фон (floor.png) на весь экран
      ************************************************/
-    body {
+    .floor {
+      position: fixed; /* Фиксированное положение для покрытия всего фона */
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       background: url("images1/floor.png") repeat;
-      background-size: cover; /* Оптимизация отображения */
+      background-size: cover; /* Покрывает весь фон */
+      z-index: 1;
+      opacity: 0.8; /* Немного прозрачности для лучшей видимости элементов */
     }
 
     /************************************************
@@ -95,8 +102,9 @@
     .bowl {
       position: absolute;
       top: 20px; /* Ближе к верхнему углу */
-      right: 100px; /* Смещено от правого края */
-      width: 150px; /* Увеличенная миска */
+      left: 50%; /* Центрирование по горизонтали */
+      transform: translateX(-50%);
+      width: 200px; /* Увеличенная миска */
       height: auto;
       z-index: 2;
     }
@@ -124,7 +132,7 @@
       background: url("images1/pig223.png") 0 0 no-repeat;
       background-size: cover; 
       transform: translate(-50%, -50%);
-      transition: top 4s linear, left 4s linear; /* Медленное перемещение */
+      transition: top 6s linear; /* Медленное вертикальное перемещение */
       animation: walk 1s steps(2) infinite; /* Анимация шага */
     }
     @keyframes walk {
@@ -170,8 +178,8 @@
       bottom: 0; left: 0; 
       width: 100%;
       height: 80px;
-      background: #eeeeee;
-      border-top: 2px solid #cccccc;
+      background: #8B4513; /* Коричневый фон */
+      border-top: 2px solid #6F4E37;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -180,14 +188,16 @@
     }
     .bottom-menu button {
       margin: 0 10px;
-      padding: 10px 20px;
+      padding: 12px 24px;
       cursor: pointer;
-      border: 2px solid #999999;
-      background: #ffffff;
+      border: 2px solid #5C3317;
+      background: #A0522D; /* Более светлый коричневый */
+      color: #ffffff; /* Белые буквы */
       font-family: 'Press Start 2P', monospace;
       transition: background 0.2s, transform 0.2s;
       display: flex;
       align-items: center;
+      font-size: 0.8rem;
     }
     .bottom-menu button img {
       width: 16px;
@@ -195,7 +205,7 @@
       margin-left: 6px;
     }
     .bottom-menu button:hover {
-      background: #ffd700;
+      background: #CD853F; /* Светло-коричневый при наведении */
       transform: scale(1.05);
     }
 
@@ -209,12 +219,13 @@
       .bowl {
         width: 100px;
         top: 10px;
-        right: 50px;
+        left: 50%;
+        transform: translateX(-50%);
       }
       .bottom-menu button {
         margin: 0 5px;
         padding: 8px 16px;
-        font-size: 0.8rem;
+        font-size: 0.6rem;
       }
       .loading-text {
         font-size: 1rem;
@@ -249,8 +260,6 @@
     <!-- Свинка -->
     <div class="pig" id="pig">
       <div class="speech-bubble">Привет!</div>
-      <!-- Свинка изображается через фон, дополнительный img скрыт -->
-      <img src="images1/pig223.png" alt="Свинка" style="display: none;">
     </div>
   </div>
 
@@ -404,7 +413,7 @@
       const maxY = gameArea.clientHeight - pigHeight / 2;
 
       // Генерируем случайные координаты (только вертикально)
-      const newY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+      let newY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
 
       // Получаем текущую X позицию свинки
       const currentX = parseInt(pig.style.left);
@@ -425,6 +434,11 @@
       // Устанавливаем новые координаты свинки (только Y)
       pig.style.top = `${newY}px`;
     }
+
+    /************************************************
+     * 4. Управление исчезновением "Привет!"
+     ************************************************/
+    // Уже реализовано через CSS-анимацию fadeOut в классе .speech-bubble
   </script>
 
 </body>
