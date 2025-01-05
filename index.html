@@ -65,6 +65,7 @@
     .pig-image {
       width: 150px; /* можно изменить размер */
       height: auto;
+      image-rendering: pixelated; /* свинка — пиксельное изображение */
     }
 
     .pig-speech {
@@ -84,9 +85,9 @@
   <!-- Экран со свинкой -->
   <div class="pig-screen hidden" id="pigScreen">
     <div class="pig-container">
-      <!-- Изображение мультяшной свинки -->
+      <!-- Изображение мультяшной свинки через Base64 -->
       <img
-        src="https://cdn-icons-png.flaticon.com/512/2433/2433092.png"
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAQCAYAAADFHQIrAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5AYKAh8WyD/9sgAAAaVJREFUOBHNk71Kw0Ecx7d3Zae7sH7ApqNNAhp4AXXfhpS9BGMa9FLBbaJfQyXrgLf0UQvBChpKyFIFRQoSs4FzWBXmgXUYn7Og2QgNofcCT2vbm8m+32d7gBYNgJQovmMFXTt1ka7EB3it4XSqWH/9/Hp+o8fHDVRRZPuH5IW+woVXJ7O1Wy7p2f25fyQmG5AqbiKnUhgk8w07r8FKYfCF31kZ1QpOr0HIPARBD34we+YMKHTyiOkdFvZE9HSW8kvWGHkBVNYMsJVndVlNx8nN79QEcr9n2KllP7PaES2cjCt9hMyh6hrgYOp12YuGN3REZKZzvWO3r0yHJ9d5CoLShrdYEpuCt0P0D8kTnR9Kdqldl9nDcY7l9boqlb2aHQYo5V9h0EAfbLBb4Lbc0jjs//f67KghSXKXYBVszEmUGcEJ3G8fXca1Uht37G6vMDt4KhrF28XoRHascZDUHzv3Xz0NwY+PI4N3LHED5C6efWW/LFjyH+gfVRQWuhWHDFgAAAABJRU5ErkJggg=="
         alt="Cartoon Pig"
         class="pig-image"
       />
