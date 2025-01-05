@@ -1,23 +1,101 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Привет</title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-        }
-        h1 {
-            color: #333;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Привет</title>
+  <style>
+    /* Общие стили для всей страницы */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Коричневый фон для блока Loading */
+    .loading-screen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #8B4513; /* коричневый цвет */
+      color: #fff;
+      flex-direction: column;
+    }
+
+    /* Стили для текста "Loading..." */
+    .loading-text {
+      font-size: 2rem;
+      animation: bounce 1.5s infinite;
+    }
+
+    /* Анимация прыжка */
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-20px);
+      }
+      60% {
+        transform: translateY(-10px);
+      }
+    }
+
+    /* Скрытый класс (прячем элементы через display:none) */
+    .hidden {
+      display: none;
+    }
+
+    /* Экран со "свинкой" */
+    .pig-screen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      background-color: #f0f0f0; 
+    }
+
+    .pig-container {
+      text-align: center;
+      margin: 0 auto;
+    }
+
+    .pig-image {
+      width: 120px;
+      height: auto;
+    }
+
+    .pig-speech {
+      font-size: 1.5rem;
+      color: #333;
+      margin-top: 1rem;
+    }
+  </style>
 </head>
 <body>
-    <h1>Привет!</h1>
+
+  <!-- Блок загрузки -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-text">Loading...</div>
+  </div>
+
+  <!-- Блок со свинкой -->
+  <div class="pig-screen hidden" id="pigScreen">
+    <div class="pig-container">
+      <!-- Можно поставить любую картинку свинки по вашему вкусу -->
+      <img src="https://cdn-icons-png.flaticon.com/512/2922/2922510.png" alt="Pig" class="pig-image" />
+      <p class="pig-speech">Привет!</p>
+    </div>
+  </div>
+
+  <script>
+    // Через 3 секунды прячем экран загрузки, показываем блок со свинкой
+    setTimeout(() => {
+      document.getElementById('loadingScreen').classList.add('hidden');
+      document.getElementById('pigScreen').classList.remove('hidden');
+    }, 3000); // 3000 мс = 3 секунды
+  </script>
 </body>
 </html>
