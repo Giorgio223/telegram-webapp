@@ -82,17 +82,11 @@
     }
 
     /************************************************
-     * 3. Пол (floor.png) на весь фон
+     * 3. Фон (floor.png) на весь экран
      ************************************************/
-    .floor {
-      position: fixed; /* Фиксированное положение для покрытия всего фона */
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+    body {
       background: url("images1/floor.png") repeat;
-      background-size: cover; /* Покрывает весь фон */
-      z-index: 1;
+      background-size: cover; /* Оптимизация отображения */
     }
 
     /************************************************
@@ -100,9 +94,9 @@
      ************************************************/
     .bowl {
       position: absolute;
-      bottom: 50px; /* Над нижней панелью */
-      left: 50px;    /* Слева */
-      width: 100px;
+      top: 20px; /* Ближе к верхнему углу */
+      right: 100px; /* Смещено от правого края */
+      width: 150px; /* Увеличенная миска */
       height: auto;
       z-index: 2;
     }
@@ -119,23 +113,23 @@
       /* Вычитаем: 50px (top-bar) + 80px (bottom-menu) */
       z-index: 3;
       overflow: hidden; /* Не даём свинке выйти за пределы */
-      background-color: rgba(224, 247, 250, 0.5); /* Полупрозрачный светлый фон */
+      /* Фон прозрачный, так как floor.png уже установлен как фон body */
     }
 
     /* Свинка с анимацией шага */
     .pig {
       position: absolute;
-      width: 150px; /* Размер свинки */
-      height: 150px; /* Высота контейнера свинки */
+      width: 200px; /* Увеличенный размер свинки */
+      height: 200px; /* Высота контейнера свинки */
       background: url("images1/pig223.png") 0 0 no-repeat;
       background-size: cover; 
       transform: translate(-50%, -50%);
-      transition: top 2s linear, left 2s linear; /* Плавное перемещение */
+      transition: top 4s linear, left 4s linear; /* Медленное перемещение */
       animation: walk 1s steps(2) infinite; /* Анимация шага */
     }
     @keyframes walk {
       0%   { background-position-x: 0; }
-      100% { background-position-x: -150px; } /* Смещение для следующего кадра */
+      100% { background-position-x: -200px; } /* Смещение для следующего кадра */
     }
 
     /* Речевое облачко */
@@ -208,9 +202,14 @@
     /* Адаптивность */
     @media (max-width: 600px) {
       .pig {
-        width: 100px;
-        height: 100px;
+        width: 120px;
+        height: 120px;
         animation: walk 0.5s steps(2) infinite;
+      }
+      .bowl {
+        width: 100px;
+        top: 10px;
+        right: 50px;
       }
       .bottom-menu button {
         margin: 0 5px;
@@ -258,10 +257,7 @@
   <!-- 4. Миска -->
   <img src="images1/miska.png" alt="Миска" class="bowl" id="bowl" />
 
-  <!-- 5. Пол (floor.png) -->
-  <div class="floor"></div>
-
-  <!-- 6. Нижняя панель с кнопками -->
+  <!-- 5. Нижняя панель с кнопками -->
   <div class="bottom-menu">
     <button id="depositBtn">Депозит <img src="images1/ton.png" alt="TON"/></button>
     <button id="withdrawBtn">Вывод <img src="images1/ton.png" alt="TON"/></button>
@@ -387,11 +383,15 @@
     const bowl = document.getElementById('bowl');
 
     // Размеры свинки (соответствуют CSS)
-    const pigWidth = 150;
-    const pigHeight = 150;
+    const pigWidth = 200;
+    const pigHeight = 200;
 
-    // Интервал перемещения свинки (каждые 3 секунды)
-    setInterval(movePigSmoothly, 3000);
+    // Начальная позиция свинки (центр)
+    pig.style.left = '50%';
+    pig.style.top = '50%';
+
+    // Интервал перемещения свинки (каждые 5 секунд)
+    setInterval(movePigSmoothly, 5000);
 
     function movePigSmoothly() {
       const areaRect = gameArea.getBoundingClientRect();
@@ -403,14 +403,16 @@
       const minY = pigHeight / 2;
       const maxY = gameArea.clientHeight - pigHeight / 2;
 
-      // Генерируем случайные координаты (центр свинки)
-      let newX = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
-      let newY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+      // Генерируем случайные координаты (только вертикально)
+      const newY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+
+      // Получаем текущую X позицию свинки
+      const currentX = parseInt(pig.style.left);
 
       // Проверяем, не пересекается ли новая позиция с миской
-      const bowlCenterX = bowlRect.left + bowlRect.width / 2 - areaRect.left;
-      const bowlCenterY = bowlRect.top + bowlRect.height / 2 - areaRect.top;
-      const distance = Math.hypot(newX - bowlCenterX, newY - bowlCenterY);
+      const bowlCenterX = bowlRect.left + bowlRect.width / 2 - gameArea.getBoundingClientRect().left;
+      const bowlCenterY = bowlRect.top + bowlRect.height / 2 - gameArea.getBoundingClientRect().top;
+      const distance = Math.hypot(currentX - bowlCenterX, newY - bowlCenterY);
 
       const minDistance = (bowlRect.width / 2) + (pigWidth / 2) + 20; // 20px отступ
 
@@ -420,21 +422,9 @@
         return;
       }
 
-      // Устанавливаем новые координаты свинки
-      pig.style.left = `${newX}px`;
+      // Устанавливаем новые координаты свинки (только Y)
       pig.style.top = `${newY}px`;
     }
-
-    /************************************************
-     * 4. Анимация исчезновения "Привет!"
-     ************************************************/
-    // Уже реализовано через CSS-анимацию fadeOut в классе .speech-bubble
-
-    /************************************************
-     * 5. Запрет наступать на миску (опционально)
-     ************************************************/
-    // Уже реализовано через проверку расстояния при перемещении свинки
-
   </script>
 
 </body>
