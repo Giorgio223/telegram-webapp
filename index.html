@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>Свинка и TON</title>
+  <meta charset="UTF-8">
+  <title>Свинка и TON WebApp</title>
+  
+  <!-- Подключаем пиксельный шрифт -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  
   <style>
     /************************************************
      * Общие настройки страницы
@@ -13,27 +17,30 @@
       width: 100%;
       height: 100%;
       overflow: hidden; /* Запрещаем прокрутку */
-      background: #ccc; /* Серый фон подложки */
-      font-family: Arial, sans-serif;
+      font-family: 'Press Start 2P', monospace; /* Пиксельный шрифт */
+      background-color: #cccccc; /* Серый фон подложки */
     }
 
     /************************************************
-     * 1. Экран Loading (серый, 2 секунды)
+     * 1. Экран Loading (серый, с надписью)
      ************************************************/
     .loading-screen {
       position: absolute;
       top: 0; left: 0;
       width: 100%;
       height: 100%;
-      background: #ccc; /* Серый цвет */
+      background: #999999; /* Темно-серый фон */
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 9999;
+      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAQAAADZ9HSAAAAAJ0lEQVR42mNk+M+QzAEMBDGJiYDYAAPxBjPYUBRRRAAAAASUVORK5CYII="); /* Пиксельный узор */
+      background-repeat: repeat;
+      background-size: 20px 20px;
     }
     .loading-text {
-      font-size: 2rem;
-      color: #333;
+      font-size: 1.5rem;
+      color: #ffffff;
       animation: bounce 1.5s infinite;
     }
     @keyframes bounce {
@@ -46,17 +53,17 @@
     }
 
     /************************************************
-     * 2. Верхняя панель (Баланс TON, кнопка Депозит)
+     * 2. Верхняя панель (Баланс TON)
      ************************************************/
     .top-bar {
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 50px;
-      background: #333;
-      color: #fff;
+      background: #333333;
+      color: #ffffff;
       display: flex;
       align-items: center;
-      justify-content: space-between; /* Кнопка слева, баланс справа */
+      justify-content: flex-end;
       padding: 0 20px;
       box-sizing: border-box;
       z-index: 100;
@@ -64,26 +71,13 @@
     .balance-container {
       display: flex;
       align-items: center;
+      font-size: 1rem;
     }
     .ton-icon {
-      width: 20px; 
+      width: 20px;
       height: 20px;
       margin: 0 6px;
       vertical-align: middle;
-    }
-    .balance-text {
-      font-size: 1rem;
-    }
-    .deposit-btn {
-      padding: 8px 16px;
-      background: #fff;
-      color: #333;
-      border: 2px solid #888;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .deposit-btn:hover {
-      background: #ffd;
     }
 
     /************************************************
@@ -95,7 +89,8 @@
       left: 0;
       width: 100%;
       height: 200px; /* Высота пола */
-      background: url("images1/floor.png") center/cover no-repeat;
+      background: url("images1/floor.png") repeat-x;
+      background-size: contain;
       z-index: 1;
     }
 
@@ -104,8 +99,8 @@
      ************************************************/
     .bowl {
       position: absolute;
-      bottom: 200px; /* сразу над полом */
-      left: 50px;    /* смещаем немного слева */
+      bottom: 200px; /* Над полом */
+      left: 50px;     /* Слева */
       width: 100px;
       height: auto;
       z-index: 2;
@@ -116,184 +111,308 @@
      ************************************************/
     .game-area {
       position: absolute;
-      top: 50px; /* под верхней панелью */
+      top: 50px; /* Под верхней панелью */
       left: 0;
       width: 100%;
       height: calc(100% - 50px - 200px); 
-      /* вычитаем: 50px (top-bar) + 200px (floor) */
+      /* Вычитаем: 50px (top-bar) + 200px (floor) */
       z-index: 3;
-      overflow: hidden; /* не даём свинке выйти за пределы */
-      /* фон прозрачный (над серой подложкой) */
+      overflow: hidden; /* Не даём свинке выйти за пределы */
+      background-color: #e0f7fa; /* Светлый фон игрового поля */
     }
 
-    /* Свинка pig223.png с анимацией шага (2 кадра) */
+    /* Свинка с анимацией шага */
     .pig {
       position: absolute;
-      width: 120px; 
-      height: 80px;
+      width: 150px; /* Размер свинки */
+      height: 150px; /* Высота контейнера свинки */
       background: url("images1/pig223.png") 0 0 no-repeat;
-      background-size: cover; 
-      /* Если pig223.png содержит, к примеру, 240px шириной × 80px высотой
-         (2 кадрова анимация: кадр 0..119px, кадр 120..239px), 
-         тогда .pig = 120×80, и мы сдвигаем фоновую позицию 
-         при анимации 'walk'.
-      */
+      background-size: cover;
       transform: translate(-50%, -50%);
-      transition: top 2s linear, left 2s linear; /* плавное перемещение */
-      animation: walk 0.5s steps(2) infinite;    /* анимация лап (2 кадра) */
+      transition: top 2s linear, left 2s linear; /* Плавное перемещение */
+      animation: walk 1s steps(2) infinite; /* Анимация шага */
     }
     @keyframes walk {
       0%   { background-position-x: 0; }
-      100% { background-position-x: -120px; }
+      100% { background-position-x: -150px; } /* Смещение для следующего кадра */
     }
 
+    /* Речевое облачко */
+    .speech-bubble {
+      position: absolute;
+      bottom: 100%; /* Над свинкой */
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ffffff;
+      color: #333333;
+      border: 2px solid #333333;
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+    .speech-bubble::after {
+      content: "";
+      position: absolute;
+      top: 100%; /* Стрелочка вниз */
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #ffffff;
+    }
+
+    /************************************************
+     * 6. Нижняя панель с кнопками
+     ************************************************/
+    .bottom-menu {
+      position: absolute;
+      bottom: 0; left: 0; 
+      width: 100%;
+      height: 80px;
+      background: #eeeeee;
+      border-top: 2px solid #cccccc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      font-size: 1rem;
+    }
+    .bottom-menu button {
+      margin: 0 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+      border: 2px solid #999999;
+      background: #ffffff;
+      font-family: 'Press Start 2P', monospace;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .bottom-menu button:hover {
+      background: #ffd700;
+      transform: scale(1.05);
+    }
+
+    /* Адаптивность */
+    @media (max-width: 600px) {
+      .pig {
+        width: 100px;
+        height: 100px;
+        animation: walk 0.5s steps(2) infinite;
+      }
+      .bottom-menu button {
+        margin: 0 5px;
+        padding: 8px 16px;
+        font-size: 0.8rem;
+      }
+      .loading-text {
+        font-size: 1rem;
+      }
+      .balance-container {
+        font-size: 0.8rem;
+      }
+    }
   </style>
 </head>
 <body>
 
-  <!-- (1) Экран загрузки (серый) -->
+  <!-- 1. Экран загрузки -->
   <div class="loading-screen" id="loadingScreen">
     <div class="loading-text">Loading...</div>
   </div>
 
-  <!-- (2) Верхняя панель: Баланс, кнопка Депозит -->
+  <!-- 2. Верхняя панель с балансом TON -->
   <div class="top-bar">
-    <!-- Кнопка "Депозит" слева -->
-    <button class="deposit-btn" id="depositBtn">Депозит</button>
-
-    <!-- Справа баланс TON (изначально 0) -->
     <div class="balance-container">
-      <span class="balance-text">Баланс:</span>
-      <img src="images1/ton.png" alt="TON" class="ton-icon" />
-      <span id="tonBalanceSpan" class="balance-text">0</span>
+      <span>Баланс:</span>
+      <img src="images1/ton.png" alt="TON" class="ton-icon"/>
+      <span id="tonBalanceSpan">0</span>
     </div>
   </div>
 
-  <!-- (3) Игровая зона (свинка ходит) -->
+  <!-- 3. Игровая зона -->
   <div class="game-area" id="gameArea">
-    <div class="pig" id="pig"></div>
+    <!-- Свинка -->
+    <div class="pig" id="pig">
+      <div class="speech-bubble">Привет!</div>
+      <img src="images1/pig223.png" alt="Свинка" style="display: none;">
+    </div>
   </div>
 
-  <!-- (4) Миска -->
+  <!-- 4. Миска -->
   <img src="images1/miska.png" alt="Миска" class="bowl" id="bowl" />
 
-  <!-- (5) Пол (floor.png) -->
+  <!-- 5. Пол -->
   <div class="floor"></div>
+
+  <!-- 6. Нижняя панель с кнопками -->
+  <div class="bottom-menu">
+    <button id="depositBtn">Депозит</button>
+    <button id="withdrawBtn">Вывод</button>
+    <button id="feedBtn">Корм</button>
+  </div>
 
   <script>
     /************************************************
-     * 1. Скрываем экран "Loading..." через 2 сек
+     * 1. Скрытие экрана Loading после 2 секунд
      ************************************************/
     setTimeout(() => {
       document.getElementById('loadingScreen').classList.add('hidden');
-    }, 2000);
+    }, 2000); // 2000 мс = 2 секунды
 
     /************************************************
-     * 2. Баланс TON и логика депозита
+     * 2. Управление балансом TON и депозитом
      ************************************************/
     let tonBalance = 0;
-    let userWallet = null; // Храним TON-кошелёк, если введён
+    let userWallet = null; // Храним TON-кошелек
+
     const tonBalanceSpan = document.getElementById('tonBalanceSpan');
     const depositBtn = document.getElementById('depositBtn');
+    const withdrawBtn = document.getElementById('withdrawBtn');
+    const feedBtn = document.getElementById('feedBtn');
 
-    // Проверяем, нет ли кошелька в localStorage
+    // Функция обновления отображения баланса
+    function updateBalance() {
+      tonBalanceSpan.textContent = tonBalance.toFixed(2);
+    }
+
+    // Проверяем, есть ли кошелек в localStorage
     if (localStorage.getItem('userWallet')) {
       userWallet = localStorage.getItem('userWallet');
     }
 
-    function updateBalance() {
-      tonBalanceSpan.textContent = tonBalance.toFixed(2);
-    }
+    // Инициализируем баланс
     updateBalance();
 
+    // Обработчик кнопки Депозит
     depositBtn.addEventListener('click', () => {
-      // Если кошелёк ещё не введён, спрашиваем один раз
+      // Если кошелек не введён, запрашиваем его
       if (!userWallet) {
-        const w = prompt('Введите свой TON-кошелёк:');
-        if (!w) {
-          alert('Вы не ввели кошелёк');
+        const wallet = prompt('Введите свой TON-кошелек:');
+        if (wallet) {
+          userWallet = wallet;
+          localStorage.setItem('userWallet', wallet);
+          alert(`Кошелек сохранён: ${userWallet}`);
+        } else {
+          alert('Вы не ввели кошелёк.');
           return;
         }
-        userWallet = w;
-        localStorage.setItem('userWallet', w);
-        alert(`Ваш кошелёк сохранён: ${userWallet}`);
       }
 
-      // Далее спрашиваем сумму (максимум 0.5)
-      const amountStr = prompt('Введите сумму депозита (макс 0.5 TON):', '0.5');
-      if (!amountStr) return; // Отмена
-      const depositAmount = parseFloat(amountStr);
-      if (isNaN(depositAmount) || depositAmount <= 0) {
-        alert('Некорректная сумма депозита');
+      // Запрашиваем сумму депозита (максимум 0.5 TON)
+      const amountStr = prompt('Введите сумму депозита (макс 0.5 TON):');
+      if (!amountStr) return; // Пользователь отменил
+
+      let amount = parseFloat(amountStr);
+      if (isNaN(amount) || amount <= 0) {
+        alert('Некорректная сумма.');
         return;
       }
-      if (depositAmount > 0.5) {
-        alert('Максимум 0.5 TON');
+      if (amount > 0.5) {
+        alert('Максимум 0.5 TON.');
         return;
       }
 
-      // Имитируем подтверждение оплаты
-      const confirmed = confirm(`Оплатить ${depositAmount} TON? (имитация)`);
-      if (confirmed) {
-        tonBalance += depositAmount;
+      // Имитация процесса оплаты
+      const confirmPayment = confirm(`Оплатить ${amount} TON на кошелёк ${userWallet}?`);
+      if (confirmPayment) {
+        tonBalance += amount;
         updateBalance();
-        alert(`Оплата прошла успешно. Баланс: ${tonBalance.toFixed(2)} TON`);
+        alert(`Депозит успешно завершён. Баланс: ${tonBalance.toFixed(2)} TON.`);
+      } else {
+        alert('Депозит отменён.');
+      }
+    });
+
+    // Обработчик кнопки Вывод
+    withdrawBtn.addEventListener('click', () => {
+      // Запрашиваем сумму вывода
+      const amountStr = prompt('Введите сумму для вывода TON:');
+      if (!amountStr) return; // Пользователь отменил
+
+      let amount = parseFloat(amountStr);
+      if (isNaN(amount) || amount <= 0) {
+        alert('Некорректная сумма.');
+        return;
+      }
+      if (amount > tonBalance) {
+        alert('Недостаточно средств.');
+        return;
+      }
+
+      // Имитация процесса вывода
+      const confirmWithdrawal = confirm(`Вывести ${amount} TON на кошелёк ${userWallet}?`);
+      if (confirmWithdrawal) {
+        tonBalance -= amount;
+        updateBalance();
+        alert(`Вывод успешно завершён. Баланс: ${tonBalance.toFixed(2)} TON.`);
+      } else {
+        alert('Вывод отменён.');
+      }
+    });
+
+    // Обработчик кнопки Корм
+    feedBtn.addEventListener('click', () => {
+      const feedCost = 0.5;
+      if (tonBalance >= feedCost) {
+        tonBalance -= feedCost;
+        updateBalance();
+        alert('Свинка покормлена!');
+      } else {
+        alert('Недостаточно TON для покупки корма.');
       }
     });
 
     /************************************************
-     * 3. Логика движения свинки (плавно, каждые 3 сек)
+     * 3. Управление движением свинки
      ************************************************/
     const pig = document.getElementById('pig');
     const gameArea = document.getElementById('gameArea');
     const bowl = document.getElementById('bowl');
 
-    // Размер самой свинки (как в CSS)
-    const pigWidth = 120;
-    const pigHeight = 80;
+    // Размеры свинки (соответствуют CSS)
+    const pigWidth = 150;
+    const pigHeight = 150;
 
-    // Каждые 3 секунды — новое движение
-    setInterval(movePigRandomly, 3000);
+    // Интервал перемещения свинки (каждые 3 секунды)
+    setInterval(movePigSmoothly, 3000);
 
-    function movePigRandomly() {
-      // Размеры области
-      const areaWidth = gameArea.clientWidth;
-      const areaHeight = gameArea.clientHeight;
-
-      const minX = pigWidth / 2;
-      const maxX = areaWidth - pigWidth / 2;
-      const minY = pigHeight / 2;
-      const maxY = areaHeight - pigHeight / 2;
-
-      // Случайные координаты (центр свинки)
-      const newX = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
-      const newY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
-
-      // Проверка, не пересекается ли с миской
+    function movePigSmoothly() {
+      const areaRect = gameArea.getBoundingClientRect();
       const bowlRect = bowl.getBoundingClientRect();
-      const bowlX = bowlRect.left + bowlRect.width / 2;
-      const bowlY = bowlRect.top + bowlRect.height / 2;
-      const bowlRadius = Math.max(bowlRect.width, bowlRect.height) / 2;
 
-      const gameRect = gameArea.getBoundingClientRect();
-      const pigGlobalX = gameRect.left + newX;
-      const pigGlobalY = gameRect.top + newY;
+      // Вычисляем допустимые координаты
+      const minX = pigWidth / 2;
+      const maxX = gameArea.clientWidth - pigWidth / 2;
+      const minY = pigHeight / 2;
+      const maxY = gameArea.clientHeight - pigHeight / 2;
 
-      const dx = pigGlobalX - bowlX;
-      const dy = pigGlobalY - bowlY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
+      // Генерируем случайные координаты
+      let newX = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
+      let newY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
 
-      const pigRadius = pigWidth / 2;
+      // Проверяем, не пересекается ли с миской
+      const bowlCenterX = bowlRect.left + bowlRect.width / 2 - areaRect.left;
+      const bowlCenterY = bowlRect.top + bowlRect.height / 2 - areaRect.top;
+      const distance = Math.hypot(newX - bowlCenterX, newY - bowlCenterY);
 
-      if (dist < (bowlRadius + pigRadius)) {
-        // Если слишком близко к миске — не двигаемся
+      const minDistance = (bowlRect.width / 2) + (pigWidth / 2) + 10; // 10px отступ
+
+      if (distance < minDistance) {
+        // Если слишком близко, ищем новые координаты
+        movePigSmoothly();
         return;
       }
 
-      // Иначе двигаем свинку
-      pig.style.left = newX + 'px';
-      pig.style.top = newY + 'px';
+      // Устанавливаем новые координаты
+      pig.style.left = `${newX}px`;
+      pig.style.top = `${newY}px`;
     }
+
+    /************************************************
+     * 4. Запрет наступать на миску (опционально)
+     ************************************************/
+    // Для простоты уже реализовано через проверку расстояния
+    // Можно добавить дополнительные визуальные эффекты при приближении
   </script>
+
 </body>
 </html>
