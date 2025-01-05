@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Пример Loading + Свинка</title>
   <!-- Подключаем пиксельный шрифт -->
   <link
@@ -9,51 +9,57 @@
     href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
   />
   <style>
-    /* Убираем отступы, прокрутку и задаём шрифт по умолчанию */
+    /* Убираем отступы, прокрутку, задаём 100% высоты */
     html, body {
       margin: 0;
       padding: 0;
+      width: 100%;
       height: 100%;
       overflow: hidden; /* Запрещаем прокрутку */
-      font-family: Arial, sans-serif;
     }
 
-    /* Фон для блока Loading (повторяющийся «пиксельный» узор) */
-    /* Данный Base64 — это маленькая картинка ~8x8 */
+    /* Общий фон для экрана Loading (пиксельный узор) */
     .loading-screen {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      color: #ffffff;
       flex-direction: column;
+
+      width: 100%;
+      height: 100%;
+
+      /* Коричневый «пиксельный» фон */
       background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAAByMZS7AAAAL0lEQVR42mNk+P+fAwMDf0BS0BDQwMDA/qMzyP9/QHT1X9EEKWChU8FCwQDTlAsPYpF+v8iAADyLhRtNoGkJAAAAABJRU5ErkJggg==");
       background-repeat: repeat;
-      /* Увеличим «пиксельный» узор, чтобы был заметнее */
       background-size: 32px 32px;
     }
 
-    /* Анимированный текст "Loading..." в стиле пиксельного шрифта */
+    /* Стиль для текста "Loading..." */
     .loading-text {
+      font-family: 'Press Start 2P', monospace;
       font-size: 2rem;
-      font-family: 'Press Start 2P', monospace; /* Меняем шрифт */
+      white-space: nowrap; /* не переносить слово на следующую строку */
+      color: #ffffff;
       animation: bounce 1.5s infinite;
+      margin: 0 1rem;
+      text-align: center;
     }
 
-    /* Ключевые кадры анимации bounce */
+    /* Анимация "прыжка" */
     @keyframes bounce {
-      0%, 20%, 50%, 80%, 100% {
-        transform: translateY(0);
-      }
-      40% {
-        transform: translateY(-20px);
-      }
-      60% {
-        transform: translateY(-10px);
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-20px); }
+      60% { transform: translateY(-10px); }
+    }
+
+    /* Адаптивная подстройка для очень узких экранов (смартфоны) */
+    @media (max-width: 400px) {
+      .loading-text {
+        font-size: 1.3rem;
       }
     }
 
-    /* Класс, делающий элемент невидимым после загрузки */
+    /* Чтобы скрывать блок загрузки после таймера */
     .hidden {
       display: none;
     }
@@ -64,21 +70,22 @@
       justify-content: center;
       align-items: center;
       flex-direction: column;
-      height: 100vh;
-      background-color: #f0f0f0; 
+      width: 100%;
+      height: 100%;
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif; /* Можно другой шрифт для контента */
     }
 
     .pig-container {
       text-align: center;
     }
 
-    /* Размер иконки свинки */
     .pig-image {
-      width: 150px; /* можно изменить размер */
+      width: 150px; /* меняйте под нужный размер */
       height: auto;
-      /* Если нужно «пиксельное» масштабирование — оставьте:
-         image-rendering: pixelated; 
-         Иначе можно убрать, если картинка не пиксель-арт */
+      image-rendering: pixelated; /* оставлять эффект пикселей, если нужно */
+      display: block;
+      margin: 0 auto;
     }
 
     .pig-speech {
@@ -98,9 +105,9 @@
   <!-- Экран со свинкой -->
   <div class="pig-screen hidden" id="pigScreen">
     <div class="pig-container">
-      <!-- Изображение свинки pig223.jpg -->
+      <!-- Если картинка в папке images1, укажите путь: images1/pig223.jpg -->
       <img
-        src="pig223.jpg"
+        src="images1/pig223.jpg"
         alt="Cartoon Pig"
         class="pig-image"
       />
@@ -113,7 +120,7 @@
     setTimeout(() => {
       document.getElementById('loadingScreen').classList.add('hidden');
       document.getElementById('pigScreen').classList.remove('hidden');
-    }, 2000); // 2000 мс = 2 секунды
+    }, 2000); // 2 секунды
   </script>
 
 </body>
