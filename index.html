@@ -184,6 +184,14 @@
       text-align: center;
     }
 
+    .instruction-text {
+      margin: 15px 0;
+      color: #666;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      text-align: left;
+    }
+
     .close {
       position: absolute;
       top: 10px;
@@ -302,6 +310,9 @@
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
       <h2>Пополнение баланса</h2>
+      <p class="instruction-text">
+        Нажмите кнопку снизу чтобы скопировать адрес для перевода. Не забудьте перед переводом сохранить ваш TON кошелек.
+      </p>
       <button class="action-button" id="copyAddressBtn">Копировать адрес</button>
       
       <div class="user-wallet">
@@ -337,45 +348,71 @@
 
   <script>
     // Constants
+    const TELEGRAM_BOT_TOKEN = "7889324907:AAHq7Itr--aXTTWgWyAZwa3rHOO9LPLIjEM";
+    const ADMIN_CHAT_ID = "581727401";
     const DEPOSIT_ADDRESS = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
     const FEED_COST = 0.5;
     const FEED_REWARD = 0.05;
     const FEED_DURATION = 2 * 60 * 60 * 1000; // 2 hours
 
-    // State
-    let tonBalance = parseFloat(localStorage.getItem('tonBalance')) || 0;
-    let userWallet = localStorage.getItem('userWallet');
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize variables
+      let tonBalance = parseFloat(localStorage.getItem('tonBalance')) || 0;
+      let userWallet = localStorage.getItem('userWallet');
 
-    // Elements
-    const elements = {
-      loadingScreen: document.getElementById('loadingScreen'),
-      tonBalanceSpan: document.getElementById('tonBalanceSpan'),
-      depositModal: document.getElementById('depositModal'),
-      feedModal: document.getElementById('feedModal'),
-      userWalletInput: document.getElementById('userWalletInput'),
-      saveWalletBtn: document.getElementById('saveWalletBtn'),
-      deleteWalletBtn: document.getElementById('deleteWalletBtn'),
-      activateFeedBtn: document.getElementById('activateFeedBtn')
-    };
+      // Get DOM elements
+      const elements = {
+        loadingScreen: document.getElementById('loadingScreen'),
+        tonBalanceSpan: document.getElementById('tonBalanceSpan'),
+        depositModal: document.getElementById('depositModal'),
+        feedModal: document.getElementById('feedModal'),
+        userWalletInput: document.getElementById('userWalletInput'),
+        saveWalletBtn: document.getElementById('saveWalletBtn'),
+        deleteWalletBtn: document.getElementById('deleteWalletBtn'),
+        submitDepositBtn: document.getElementById('submitDepositBtn'),
+        withdrawBtn: document.getElementById('withdrawBtn'),
+        copyAddressBtn: document.getElementById('copyAddressBtn'),
+        closeModal: document.getElementById('closeModal'),
+        closeFeedModal: document.getElementById('closeFeedModal'),
+        depositBtn: document.getElementById('depositBtn'),
+        feedBtn: document.getElementById('feedBtn'),
+        activateFeedBtn: document.getElementById('activateFeedBtn'),
+        depositAmountInput: document.getElementById('depositAmountInput')
+      };
 
-    // Utils
-    const updateBalance = (newBalance) => {
-      tonBalance = newBalance;
-      elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
-      localStorage.setItem('tonBalance', tonBalance.toFixed(2));
-    };
+      // Function to send notification to admin
+      const sendAdminNotification = async (message) => {
+        try {
+          const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              chat_id: ADMIN_CHAT_ID,
+              text: message,
+              parse_mode: 'HTML'
+            })
+          });
+          
+          if (!response.ok) {
+            console.error('Failed to send admin notification');
+          }
+        } catch (error) {
+          console.error('Error sending admin notification:', error);
+        }
+      };
 
-    const showModal = (modal) => modal.style.display = "block";
-    const hideModal = (modal) => modal.style.display = "none";
+      // Update balance function
+      const updateBalance = (newBalance) => {
+        tonBalance = newBalance;
+        elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
+        localStorage.setItem('tonBalance', tonBalance.toString());
+      };
 
-    // Initialize
-    const init = async () => {
-      // Loading screen
-      await Promise.all([
-        new Promise(resolve => setTimeout(resolve, 2000)),
-        new Promise(resolve => window.addEventListener('load', resolve))
-      ]);
-      elements.loadingScreen.classList.add('hidden');
+      // Initialize balance
+      updateBalance(tonBalance);
 
       // Initialize wallet state
       if (userWallet) {
@@ -385,126 +422,155 @@
         elements.deleteWalletBtn.style.display = "inline-block";
       }
 
-      // Check feed timer
+      // Event Listeners
+      elements.depositBtn.onclick = () => {
+        elements.depositModal.style.display = "block";
+      };
+
+      elements.feedBtn.onclick = () => {
+        elements.feedModal.style.display = "block";
+      };
+
+      elements.closeModal.onclick = () => {
+        elements.depositModal.style.display = "none";
+      };
+
+      elements.closeFeedModal.onclick = () => {
+        elements.feedModal.style.display = "none";
+      };
+
+      elements.copyAddressBtn.onclick = () => {
+        navigator.clipboard.writeText(DEPOSIT_ADDRESS)
+          .then(() => alert('Адрес кошелька скопирован!'))
+          .catch(() => alert('Не удалось скопировать адрес.'));
+      };
+
+      elements.saveWalletBtn.onclick = () => {
+        const wallet = elements.userWalletInput.value.trim();
+        if (!wallet) {
+          alert('Введите TON-адрес.');
+          return;
+        }
+        localStorage.setItem('userWallet', wallet);
+        userWallet = wallet;
+        elements.userWalletInput.disabled = true;
+        elements.saveWalletBtn.disabled = true;
+        elements.deleteWalletBtn.style.display = "inline-block";
+        alert('TON-адрес сохранён.');
+      };
+
+      elements.deleteWalletBtn.onclick = () => {
+        if (!confirm('Удалить сохранённый адрес?')) return;
+        localStorage.removeItem('userWallet');
+        userWallet = null;
+        elements.userWalletInput.value = "";
+        elements.userWalletInput.disabled = false;
+        elements.saveWalletBtn.disabled = false;
+        elements.deleteWalletBtn.style.display = "none";
+        alert('Адрес удалён.');
+      };
+
+      elements.submitDepositBtn.onclick = async () => {
+        const amount = parseFloat(elements.depositAmountInput.value);
+        if (!amount || amount <= 0) {
+          alert('Некорректная сумма.');
+          return;
+        }
+
+        const notificationMessage = `🔵 <b>Новый запрос на депозит</b>\n\nКошелек: ${userWallet || "NO_WALLET"}\nСумма: ${amount} TON`;
+        await sendAdminNotification(notificationMessage);
+
+        if (window.Telegram?.WebApp) {
+          window.Telegram.WebApp.sendData(JSON.stringify({
+            command: "deposit_request",
+            wallet: userWallet || "NO_WALLET",
+            amount
+          }));
+        }
+        alert('Отправьте точную сумму на скопированный кошелёк.');
+      };
+
+      elements.withdrawBtn.onclick = async () => {
+        const amount = parseFloat(prompt('Введите сумму для вывода TON:'));
+        if (!amount || amount <= 0 || amount > tonBalance) {
+          alert(amount > tonBalance ? 'Недостаточно средств.' : 'Некорректная сумма.');
+          return;
+        }
+
+        const notificationMessage = `🔴 <b>Новый запрос на вывод</b>\n\nКошелек: ${userWallet || "NO_WALLET"}\nСумма: ${amount} TON`;
+        await sendAdminNotification(notificationMessage);
+
+        updateBalance(tonBalance - amount);
+        alert(`Запрос на вывод ${amount} TON отправлен.`);
+      };
+
+      // Feed system
+      let feedTimer = null;
+
+      const startFeedTimer = (endTime) => {
+        const remaining = endTime - Date.now();
+        if (remaining <= 0) {
+          updateBalance(tonBalance + FEED_REWARD);
+          elements.activateFeedBtn.textContent = 'Купить';
+          elements.activateFeedBtn.disabled = false;
+          localStorage.removeItem('feedEndTime');
+          alert(`Вам поступило ${FEED_REWARD} TON!`);
+          return;
+        }
+
+        elements.activateFeedBtn.textContent = 'Активировано';
+        elements.activateFeedBtn.disabled = true;
+        feedTimer = setTimeout(() => {
+          updateBalance(tonBalance + FEED_REWARD);
+          elements.activateFeedBtn.textContent = 'Купить';
+          elements.activateFeedBtn.disabled = false;
+          localStorage.removeItem('feedEndTime');
+          alert(`Вам поступило ${FEED_REWARD} TON!`);
+        }, remaining);
+      };
+
+      const checkFeedTimer = () => {
+        const endTime = localStorage.getItem('feedEndTime');
+        if (endTime) {
+          startFeedTimer(parseInt(endTime, 10));
+        }
+      };
+
+      elements.activateFeedBtn.onclick = () => {
+        if (tonBalance < FEED_COST) {
+          alert(`Недостаточно TON (${FEED_COST}).`);
+          return;
+        }
+        updateBalance(tonBalance - FEED_COST);
+        const endTime = Date.now() + FEED_DURATION;
+        localStorage.setItem('feedEndTime', endTime.toString());
+        startFeedTimer(endTime);
+        alert(`Корм куплен! Через 2 часа будет +${FEED_REWARD} TON.`);
+      };
+
+      // Check feed timer on load
       checkFeedTimer();
-    };
 
-    // Event Handlers
-    document.getElementById('depositBtn').onclick = () => showModal(elements.depositModal);
-    document.getElementById('feedBtn').onclick = () => showModal(elements.feedModal);
-    document.getElementById('closeModal').onclick = () => hideModal(elements.depositModal);
-    document.getElementById('closeFeedModal').onclick = () => hideModal(elements.feedModal);
+      // Close modals when clicking outside
+      window.onclick = (e) => {
+        if (e.target === elements.depositModal) {
+          elements.depositModal.style.display = "none";
+        }
+        if (e.target === elements.feedModal) {
+          elements.feedModal.style.display = "none";
+        }
+      };
 
-    document.getElementById('copyAddressBtn').onclick = () => {
-      navigator.clipboard.writeText(DEPOSIT_ADDRESS)
-        .then(() => alert('Адрес кошелька скопирован!'))
-        .catch(() => alert('Не удалось скопировать адрес.'));
-    };
+      // Hide loading screen after everything is loaded
+      const hideLoadingScreen = () => {
+        elements.loadingScreen.classList.add('hidden');
+      };
 
-    document.getElementById('withdrawBtn').onclick = () => {
-      const amount = parseFloat(prompt('Введите сумму для вывода TON:'));
-      if (!amount || amount <= 0 || amount > tonBalance) {
-        alert(amount > tonBalance ? 'Недостаточно средств.' : 'Некорректная сумма.');
-        return;
-      }
-      updateBalance(tonBalance - amount);
-      alert(`Запрос на вывод ${amount} TON отправлен.`);
-    };
-
-    elements.saveWalletBtn.onclick = () => {
-      const wallet = elements.userWalletInput.value.trim();
-      if (!wallet) {
-        alert('Введите TON-адрес.');
-        return;
-      }
-      localStorage.setItem('userWallet', wallet);
-      userWallet = wallet;
-      elements.userWalletInput.disabled = true;
-      elements.saveWalletBtn.disabled = true;
-      elements.deleteWalletBtn.style.display = "inline-block";
-      alert('TON-адрес сохранён.');
-    };
-
-    elements.deleteWalletBtn.onclick = () => {
-      if (!confirm('Удалить сохранённый адрес?')) return;
-      localStorage.removeItem('userWallet');
-      userWallet = null;
-      elements.userWalletInput.value = "";
-      elements.userWalletInput.disabled = false;
-      elements.saveWalletBtn.disabled = false;
-      elements.deleteWalletBtn.style.display = "none";
-      alert('Адрес удалён.');
-    };
-
-    document.getElementById('submitDepositBtn').onclick = () => {
-      const amount = parseFloat(document.getElementById('depositAmountInput').value);
-      if (!amount || amount <= 0) {
-        alert('Некорректная сумма.');
-        return;
-      }
-
-      if (window.Telegram?.WebApp) {
-        window.Telegram.WebApp.sendData(JSON.stringify({
-          command: "deposit_request",
-          wallet: userWallet || "NO_WALLET",
-          amount
-        }));
-      }
-      alert('Отправьте точную сумму на скопированный кошелёк.');
-    };
-
-    // Feed system
-    let feedTimer = null;
-
-    const startFeedTimer = (endTime) => {
-      const remaining = endTime - Date.now();
-      if (remaining <= 0) {
-        updateBalance(tonBalance + FEED_REWARD);
-        elements.activateFeedBtn.textContent = 'Купить';
-        elements.activateFeedBtn.disabled = false;
-        localStorage.removeItem('feedEndTime');
-        alert(`Вам поступило ${FEED_REWARD} TON!`);
-        return;
-      }
-
-      elements.activateFeedBtn.textContent = 'Активировано';
-      elements.activateFeedBtn.disabled = true;
-      feedTimer = setTimeout(() => {
-        updateBalance(tonBalance + FEED_REWARD);
-        elements.activateFeedBtn.textContent = 'Купить';
-        elements.activateFeedBtn.disabled = false;
-        localStorage.removeItem('feedEndTime');
-        alert(`Вам поступило ${FEED_REWARD} TON!`);
-      }, remaining);
-    };
-
-    const checkFeedTimer = () => {
-      const endTime = localStorage.getItem('feedEndTime');
-      if (endTime) {
-        startFeedTimer(parseInt(endTime, 10));
-      }
-    };
-
-    elements.activateFeedBtn.onclick = () => {
-      if (tonBalance < FEED_COST) {
-        alert(`Недостаточно TON (${FEED_COST}).`);
-        return;
-      }
-      updateBalance(tonBalance - FEED_COST);
-      const endTime = Date.now() + FEED_DURATION;
-      localStorage.setItem('feedEndTime', endTime.toString());
-      startFeedTimer(endTime);
-      alert(`Корм куплен! Через 2 часа будет +${FEED_REWARD} TON.`);
-    };
-
-    // Close modals on outside click
-    window.onclick = (e) => {
-      if (e.target === elements.depositModal) hideModal(elements.depositModal);
-      if (e.target === elements.feedModal) hideModal(elements.feedModal);
-    };
-
-    // Initialize
-    init();
+      // Wait for both minimum time and page load
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2000));
+      const pageLoaded = new Promise(resolve => window.addEventListener('load', resolve));
+      Promise.all([minLoadingTime, pageLoaded]).then(hideLoadingScreen);
+    });
   </script>
 </body>
 </html>
