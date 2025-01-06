@@ -25,7 +25,7 @@
      * 1. Экран Loading (серый, с надписью)
      ************************************************/
     .loading-screen {
-      position: absolute;
+      position: fixed;
       top: 0; left: 0;
       width: 100%;
       height: 100%;
@@ -57,7 +57,7 @@
      * 2. Верхняя панель (Баланс TON)
      ************************************************/
     .top-bar {
-      position: absolute;
+      position: fixed;
       top: 0; left: 0; right: 0;
       height: 50px;
       background: #333333;
@@ -128,18 +128,17 @@
     .pig {
       position: absolute;
       width: 250px; /* Увеличенный размер свинки */
-      height: 250px; /* Высота контейнера свинки */
+      height: 125px; /* Высота для одного кадра (двух кадров в ширину) */
       background: url("images1/pig223.png") 0 0 no-repeat;
-      background-size: 500px 250px; /* Предполагаем 2 кадра по 250px */
+      background-size: 500px 125px; /* Двойная ширина для двух кадров */
       transform: translate(-50%, -50%);
-      transition: top 8s linear; /* Медленное вертикальное перемещение */
       animation: walk 1s steps(2) infinite; /* Анимация шага */
       left: 50%; /* Фиксированная горизонтальная позиция */
       top: 50%; /* Начальная вертикальная позиция */
     }
     @keyframes walk {
       0%   { background-position-x: 0; }
-      100% { background-position-x: -250px; } /* Смещение для следующего кадра */
+      100% { background-position-x: -250px; } /* Смещение на ширину одного кадра */
     }
 
     /* Речевое облачко */
@@ -176,7 +175,7 @@
      * 6. Нижняя панель с кнопками
      ************************************************/
     .bottom-menu {
-      position: absolute;
+      position: fixed;
       bottom: 0; left: 0; 
       width: 100%;
       height: 80px;
@@ -215,8 +214,8 @@
     @media (max-width: 600px) {
       .pig {
         width: 150px;
-        height: 150px;
-        background-size: 300px 150px; /* Подгонка для меньших размеров */
+        height: 75px; /* Половина для одного кадра */
+        background-size: 300px 75px; /* Подгонка для меньших размеров */
         animation: walk 0.5s steps(2) infinite;
       }
       .bowl {
@@ -420,11 +419,14 @@
 
   <script>
     /************************************************
-     * 1. Скрытие экрана Loading через 2 секунды
+     * 1. Управление экраном загрузки
      ************************************************/
-    setTimeout(() => {
+    window.addEventListener('load', () => {
       document.getElementById('loadingScreen').classList.add('hidden');
-    }, 2000); // 2000 мс = 2 секунды
+      
+      // Проверка состояния таймера кормления при загрузке страницы
+      checkFeedTimer();
+    });
 
     /************************************************
      * 2. Управление балансом TON и депозитом
@@ -451,17 +453,23 @@
     // Инициализируем баланс
     updateBalance();
 
-    // Функция для получения баланса с сервера
+    // Ваш API-ключ TonCenter
+    const tonCenterApiKey = "YOUR_API_KEY"; // Замените на ваш реальный API-ключ
+
+    // Функция для получения баланса с TonCenter
     function fetchBalance(wallet) {
-      // Здесь необходимо заменить URL на ваш серверный эндпоинт
-      fetch(`http://localhost:3000/balance/${wallet}`)
+      fetch(`https://toncenter.com/api/v2/getBalance?address=${wallet}`, {
+        headers: {
+          'X-API-KEY': tonCenterApiKey
+        }
+      })
         .then(response => response.json())
         .then(data => {
-          if (data.balance !== undefined) {
-            tonBalance = parseFloat(data.balance);
+          if (data.result !== undefined) {
+            tonBalance = parseFloat(data.result) / 1e9; // Преобразование из nanoTON
             updateBalance();
           } else {
-            console.error(data.error);
+            console.error(data.error || "Неизвестная ошибка при получении баланса.");
           }
         })
         .catch(error => {
@@ -491,8 +499,9 @@
         return;
       }
 
-      // Отправляем запрос на сервер для вывода
-      fetch('http://localhost:3000/withdraw', {
+      // Здесь должен быть ваш серверный эндпоинт для вывода средств
+      // Пример:
+      fetch('https://yourserver.com/api/withdraw', { // Замените на ваш серверный URL
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -506,7 +515,7 @@
             updateBalance();
             alert(data.message);
           } else {
-            alert(data.error);
+            alert(data.error || "Ошибка при выводе средств.");
           }
         })
         .catch(error => {
@@ -529,14 +538,6 @@
     const gameArea = document.getElementById('gameArea');
     const bowl = document.getElementById('bowl');
 
-    // Размеры свинки (соответствуют CSS)
-    const pigWidth = 250;
-    const pigHeight = 250;
-
-    // Начальная позиция свинки (центр)
-    pig.style.left = '50%';
-    pig.style.top = '50%';
-
     // Интервал перемещения свинки (каждые 8 секунд)
     setInterval(movePigSmoothly, 8000);
 
@@ -545,8 +546,8 @@
       const bowlRect = bowl.getBoundingClientRect();
 
       // Вычисляем допустимые координаты внутри gameArea
-      const minY = pigHeight / 2;
-      const maxY = gameArea.clientHeight - pigHeight / 2;
+      const minY = pig.offsetHeight / 2;
+      const maxY = gameArea.clientHeight - pig.offsetHeight / 2;
 
       // Генерируем случайные координаты (только вертикально)
       let newY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
@@ -559,7 +560,7 @@
       const bowlCenterY = bowlRect.top + bowlRect.height / 2 - areaRect.top;
       const distance = Math.hypot(currentX - bowlCenterX, newY - bowlCenterY);
 
-      const minDistance = (bowlRect.width / 2) + (pigWidth / 2) + 20; // 20px отступ
+      const minDistance = (bowlRect.width / 2) + (pig.offsetWidth / 2) + 20; // 20px отступ
 
       if (distance < minDistance) {
         // Если слишком близко к миске — ищем новую позицию
@@ -572,7 +573,7 @@
     }
 
     /************************************************
-     * 4. Модальное окно для депозита
+     * 4. Управление модальными окнами
      ************************************************/
     const depositModal = document.getElementById('depositModal');
     const closeModalBtn = document.getElementById('closeModal');
@@ -580,18 +581,24 @@
     const saveWalletBtn = document.getElementById('saveWalletBtn');
     const userWalletInput = document.getElementById('userWalletInput');
 
+    const feedModal = document.getElementById('feedModal');
+    const closeFeedModalBtn = document.getElementById('closeFeedModal');
+    const activateFeedBtn = document.getElementById('activateFeedBtn');
+
     // Адрес вашего кошелька TON
     const walletAddress = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
 
-    // Обработчик закрытия модального окна депозита
-    closeModalBtn.onclick = function() {
-      depositModal.style.display = "none";
-    }
+    // Обработчики закрытия модальных окон
+    closeModalBtn.onclick = () => { depositModal.style.display = "none"; }
+    closeFeedModalBtn.onclick = () => { feedModal.style.display = "none"; }
 
-    // Обработчик клика вне модального окна депозита для закрытия
+    // Обработчик клика вне модальных окон для закрытия
     window.onclick = function(event) {
       if (event.target == depositModal) {
         depositModal.style.display = "none";
+      }
+      if (event.target == feedModal) {
+        feedModal.style.display = "none";
       }
     }
 
@@ -626,7 +633,7 @@
       userWallet = enteredWallet;
       alert('Ваш TON-адрес сохранён.');
 
-      // Получаем баланс с сервера
+      // Получаем баланс с TonCenter
       fetchBalance(userWallet);
 
       depositModal.style.display = "none";
@@ -646,23 +653,7 @@
     /************************************************
      * 5. Модальное окно для кормления
      ************************************************/
-    const feedModal = document.getElementById('feedModal');
-    const closeFeedModalBtn = document.getElementById('closeFeedModal');
-    const activateFeedBtn = document.getElementById('activateFeedBtn');
-
     let feedTimer = null;
-
-    // Обработчик закрытия модального окна кормления
-    closeFeedModalBtn.onclick = function() {
-      feedModal.style.display = "none";
-    }
-
-    // Обработчик клика вне модального окна кормления для закрытия
-    window.onclick = function(event) {
-      if (event.target == feedModal) {
-        feedModal.style.display = "none";
-      }
-    }
 
     // Обработчик кнопки Активировать корм
     activateFeedBtn.addEventListener('click', () => {
@@ -687,43 +678,49 @@
       updateBalance();
 
       // Деактивируем кнопку и запускаем таймер
-      activateFeedBtn.textContent = 'Активировать';
+      activateFeedBtn.textContent = 'Активировано';
       activateFeedBtn.disabled = true;
 
       // Запускаем таймер на 2 часа (7200000 мс)
-      feedTimer = setTimeout(() => {
+      const endTime = Date.now() + 7200000; // 2 часа
+      localStorage.setItem('feedEndTime', endTime);
+      startFeedTimer(endTime);
+
+      alert('Корм успешно куплен! После 2 часов вы получите 0.05 TON.');
+    });
+
+    // Функция для запуска таймера кормления
+    function startFeedTimer(endTime) {
+      const remainingTime = endTime - Date.now();
+
+      if (remainingTime > 0) {
+        feedTimer = setTimeout(() => {
+          tonBalance += 0.05;
+          updateBalance();
+          alert('Вам поступило 0.05 TON за кормление свинки!');
+          activateFeedBtn.textContent = 'Купить';
+          activateFeedBtn.disabled = false;
+          localStorage.removeItem('feedEndTime');
+        }, remainingTime);
+      } else {
+        // Если время уже прошло
         tonBalance += 0.05;
         updateBalance();
-        alert('Вам поступило 0.05 TON за кормление свинки!');
         activateFeedBtn.textContent = 'Купить';
         activateFeedBtn.disabled = false;
         localStorage.removeItem('feedEndTime');
-      }, 7200000); // 2 часа
+      }
+    }
 
-      alert('Корм успешно куплен! После 2 часов вы получите 0.05 TON.');
-      
-      // Сохраняем состояние таймера в localStorage
-      const endTime = Date.now() + 7200000;
-      localStorage.setItem('feedEndTime', endTime);
-    });
-
-    // Проверка состояния таймера при загрузке страницы
-    window.onload = function() {
+    // Функция для проверки таймера кормления при загрузке страницы
+    function checkFeedTimer() {
       const endTime = localStorage.getItem('feedEndTime');
       if (endTime) {
         const remainingTime = endTime - Date.now();
         if (remainingTime > 0) {
-          activateFeedBtn.textContent = 'Активировать';
+          activateFeedBtn.textContent = 'Активировано';
           activateFeedBtn.disabled = true;
-
-          feedTimer = setTimeout(() => {
-            tonBalance += 0.05;
-            updateBalance();
-            alert('Вам поступило 0.05 TON за кормление свинки!');
-            activateFeedBtn.textContent = 'Купить';
-            activateFeedBtn.disabled = false;
-            localStorage.removeItem('feedEndTime');
-          }, remainingTime);
+          startFeedTimer(endTime);
         } else {
           localStorage.removeItem('feedEndTime');
         }
@@ -731,51 +728,10 @@
     }
 
     /************************************************
-     * 6. Функции для взаимодействия с сервером
+     * 6. Дополнительные функции
      ************************************************/
 
-    // Функция для получения баланса с сервера
-    function fetchBalance(wallet) {
-      // Здесь необходимо заменить URL на ваш серверный эндпоинт
-      fetch(`http://localhost:3000/balance/${wallet}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.balance !== undefined) {
-            tonBalance = parseFloat(data.balance);
-            updateBalance();
-          } else {
-            console.error(data.error);
-          }
-        })
-        .catch(error => {
-          console.error('Ошибка при получении баланса:', error);
-        });
-    }
-
-    // Функция для обработки депозита на сервере
-    function processDeposit(username, amount) {
-      fetch('http://localhost:3000/deposit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ wallet: walletAddress, username: username, amount: amount })
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.balance !== undefined) {
-            tonBalance = parseFloat(data.balance);
-            updateBalance();
-            alert(data.message);
-          } else {
-            alert(data.error);
-          }
-        })
-        .catch(error => {
-          console.error('Ошибка при депозите:', error);
-          alert('Произошла ошибка при депозите.');
-        });
-    }
+    // Можно добавить здесь дополнительные функции по необходимости
   </script>
 
 </body>
