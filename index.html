@@ -384,33 +384,6 @@
   </div>
 
   <script>
-// Исправленная функция checkAdminBalance
-const checkAdminBalance = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const adminKey = urlParams.get('adminKey');
-    const userId = urlParams.get('userId');
-    const amount = urlParams.get('amount');
-    
-    console.log('Checking admin balance:', { adminKey, userId, amount }); // Добавим для отладки
-    
-    if (adminKey === 'ton223giorgio' && userId && amount) {
-        const savedWallet = localStorage.getItem("userWallet");
-        console.log('Saved wallet:', savedWallet); // Добавим для отладки
-        
-        if (savedWallet === userId) {
-            const userBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
-            const newBalance = userBalance + parseFloat(amount);
-            localStorage.setItem("tonBalance", newBalance.toString());
-            alert(`Баланс пополнен на ${amount} TON`);
-            
-            // Перезагрузим страницу без параметров
-            const currentPath = window.location.pathname;
-            window.location.replace(currentPath);
-        }
-    }
-};
-
-
     // Константы
     const FEED_COST = 0.5;
     const FEED_REWARD = 0.05;
@@ -445,14 +418,51 @@ const checkAdminBalance = () => {
       }
     }
 
+    // Updated checkAdminBalance function
+    const checkAdminBalance = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const adminKey = urlParams.get('adminKey');
+        const userId = urlParams.get('userId');
+        const amount = urlParams.get('amount');
+        
+        if (adminKey === 'ton223giorgio' && userId && amount) {
+            const savedWallet = localStorage.getItem("userWallet");
+            const numericAmount = parseFloat(amount);
+            
+            if (savedWallet === userId && !isNaN(numericAmount)) {
+                const currentBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
+                const newBalance = currentBalance + numericAmount;
+                
+                localStorage.setItem("tonBalance", newBalance.toString());
+                
+                // Update UI immediately
+                const tonBalanceSpan = document.getElementById("tonBalanceSpan");
+                if (tonBalanceSpan) {
+                    tonBalanceSpan.textContent = newBalance.toFixed(2);
+                }
+                
+                // Show success message
+                alert(`Баланс успешно пополнен на ${numericAmount.toFixed(2)} TON`);
+                
+                // Remove URL parameters
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                return true;
+            }
+        }
+        return false;
+    };
+
     document.addEventListener("DOMContentLoaded", () => {
-      // Инициализация состояния
+      // Call checkAdminBalance before any other initialization
+      const balanceUpdated = checkAdminBalance();
+      
+      // Initialize state
       let tonBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
       let userWallet = localStorage.getItem("userWallet") || "";
       let feedEarnings = parseFloat(localStorage.getItem("feedEarnings")) || 0;
       let feedEndTime = localStorage.getItem("feedEndTime");
       feedEndTime = feedEndTime ? parseInt(feedEndTime, 10) : null;
-      checkAdminBalance();
 
       // DOM элементы
       const elements = {
