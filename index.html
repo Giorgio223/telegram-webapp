@@ -257,11 +257,11 @@
     }
     .modal-content {
       background-color: #fefefe;
-      margin: 10% auto; /* Центрирование модала */
+      margin: 5% auto; /* Центрирование модала */
       padding: 20px;
       border: 2px solid #888;
       width: 80%;
-      max-width: 400px; /* Максимальная ширина */
+      max-width: 500px; /* Максимальная ширина */
       font-family: 'Press Start 2P', monospace;
       position: relative;
       text-align: center;
@@ -283,7 +283,7 @@
       text-decoration: none;
       cursor: pointer;
     }
-    .copy-btn {
+    .copy-btn, .save-btn, .activate-btn {
       margin-top: 20px;
       padding: 10px 20px;
       background-color: #8B4513;
@@ -294,9 +294,59 @@
       transition: background-color 0.2s, transform 0.2s;
       font-family: 'Press Start 2P', monospace;
     }
-    .copy-btn:hover {
+    .copy-btn:hover, .save-btn:hover, .activate-btn:hover {
       background-color: #A0522D;
       transform: scale(1.05);
+    }
+    .user-wallet {
+      margin-top: 20px;
+    }
+    .user-wallet input {
+      width: 80%;
+      padding: 8px;
+      font-size: 0.8rem;
+      margin-top: 10px;
+      box-sizing: border-box;
+    }
+
+    /************************************************
+     * 8. Модальное окно для кормления
+     ************************************************/
+    .feed-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 20px;
+      background-color: #A0522D; /* Коричневый фон */
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .feed-image {
+      width: 80px;
+      height: auto;
+    }
+    .feed-description {
+      flex: 1;
+      margin: 0 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .feed-description span {
+      margin: 5px 0;
+      color: #ffffff;
+      font-size: 1rem;
+    }
+    .feed-price {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+    }
+    .feed-price img.ton-icon {
+      width: 16px;
+      height: 16px;
+      margin-left: 5px;
     }
   </style>
 </head>
@@ -315,7 +365,10 @@
     </div>
   </div>
 
-  <!-- 3. Игровая зона -->
+  <!-- 3. Фон (floor.png) на весь экран -->
+  <div class="floor"></div>
+
+  <!-- 4. Игровая зона -->
   <div class="game-area" id="gameArea">
     <!-- Свинка -->
     <div class="pig" id="pig">
@@ -323,22 +376,45 @@
     </div>
   </div>
 
-  <!-- 4. Миска -->
+  <!-- 5. Миска -->
   <img src="images1/miska.png" alt="Миска" class="bowl" id="bowl" />
 
-  <!-- 5. Нижняя панель с кнопками -->
+  <!-- 6. Нижняя панель с кнопками -->
   <div class="bottom-menu">
     <button id="depositBtn">Депозит <img src="images1/ton.png" alt="TON"/></button>
     <button id="withdrawBtn">Вывод <img src="images1/ton.png" alt="TON"/></button>
     <button id="feedBtn">Корм <img src="images1/ton.png" alt="TON"/></button>
   </div>
 
-  <!-- 6. Модальное окно для депозита -->
+  <!-- 7. Модальное окно для депозита -->
   <div id="depositModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
+      <h2>Пополнение баланса</h2>
       <p>Нажмите кнопку скопировать, чтобы пополнить баланс, а также не забудьте в комментарии к переводу написать ваш username в Telegram.</p>
       <button class="copy-btn" id="copyAddressBtn">Копировать адрес</button>
+      <div class="user-wallet">
+        <label for="userWallet">Ваш TON-адрес:</label>
+        <input type="text" id="userWalletInput" placeholder="Введите свой TON-адрес" />
+        <button class="save-btn" id="saveWalletBtn">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. Модальное окно для кормления -->
+  <div id="feedModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeFeedModal">&times;</span>
+      <h2 style="background-color: #A0522D; color: #ffffff; padding: 10px;">Корм</h2>
+      <div class="feed-item">
+        <img src="images1/miska.png" alt="Миска" class="feed-image"/>
+        <div class="feed-description">
+          <span>Обычный корм</span>
+          <span class="feed-price">0.5 TON <img src="images1/ton.png" alt="TON" class="ton-icon"/></span>
+        </div>
+        <img src="images1/ton.png" alt="TON" class="ton-icon"/>
+      </div>
+      <button class="activate-btn" id="activateFeedBtn">Купить</button>
     </div>
   </div>
 
@@ -369,17 +445,29 @@
     // Проверяем, есть ли кошелек в localStorage
     if (localStorage.getItem('userWallet')) {
       userWallet = localStorage.getItem('userWallet');
+      fetchBalance(userWallet);
     }
 
     // Инициализируем баланс
     updateBalance();
 
-    // Обработчик кнопки Депозит
-    depositBtn.addEventListener('click', () => {
-      // Открываем модальное окно
-      const modal = document.getElementById('depositModal');
-      modal.style.display = "block";
-    });
+    // Функция для получения баланса с сервера
+    function fetchBalance(wallet) {
+      // Здесь необходимо заменить URL на ваш серверный эндпоинт
+      fetch(`http://localhost:3000/balance/${wallet}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.balance !== undefined) {
+            tonBalance = parseFloat(data.balance);
+            updateBalance();
+          } else {
+            console.error(data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Ошибка при получении баланса:', error);
+        });
+    }
 
     // Обработчик кнопки Вывод
     withdrawBtn.addEventListener('click', () => {
@@ -403,30 +491,35 @@
         return;
       }
 
-      // Имитация процесса вывода через Telegram
-      // В реальном приложении здесь должна быть интеграция с серверной логикой и TON API
-      const confirmed = confirm(`Вывести ${amount} TON на кошелёк ${userWallet}?`);
-      if (confirmed) {
-        // Здесь должна быть проверка успешности транзакции через сервер
-        // Для демонстрации уменьшаем баланс
-        tonBalance -= amount;
-        updateBalance();
-        alert(`Вывод успешно завершён. Баланс: ${tonBalance.toFixed(2)} TON.`);
-      } else {
-        alert('Вывод отменён.');
-      }
+      // Отправляем запрос на сервер для вывода
+      fetch('http://localhost:3000/withdraw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ wallet: userWallet, amount: amount })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.balance !== undefined) {
+            tonBalance = parseFloat(data.balance);
+            updateBalance();
+            alert(data.message);
+          } else {
+            alert(data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Ошибка при выводе:', error);
+          alert('Произошла ошибка при выводе средств.');
+        });
     });
 
     // Обработчик кнопки Корм
     feedBtn.addEventListener('click', () => {
-      const feedCost = 0.5;
-      if (tonBalance >= feedCost) {
-        tonBalance -= feedCost;
-        updateBalance();
-        alert('Свинка покормлена!');
-      } else {
-        alert('Недостаточно TON для покупки корма.');
-      }
+      // Открываем модальное окно кормления
+      const feedModal = document.getElementById('feedModal');
+      feedModal.style.display = "block";
     });
 
     /************************************************
@@ -481,22 +574,24 @@
     /************************************************
      * 4. Модальное окно для депозита
      ************************************************/
-    const modal = document.getElementById('depositModal');
-    const closeModal = document.getElementById('closeModal');
+    const depositModal = document.getElementById('depositModal');
+    const closeModalBtn = document.getElementById('closeModal');
     const copyAddressBtn = document.getElementById('copyAddressBtn');
+    const saveWalletBtn = document.getElementById('saveWalletBtn');
+    const userWalletInput = document.getElementById('userWalletInput');
 
-    // Адрес кошелька
+    // Адрес вашего кошелька TON
     const walletAddress = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
 
-    // Обработчик закрытия модального окна
-    closeModal.onclick = function() {
-      modal.style.display = "none";
+    // Обработчик закрытия модального окна депозита
+    closeModalBtn.onclick = function() {
+      depositModal.style.display = "none";
     }
 
-    // Обработчик клика вне модального окна для закрытия
+    // Обработчик клика вне модального окна депозита для закрытия
     window.onclick = function(event) {
-      if (event.target == modal) {
-        modal.style.display = "none";
+      if (event.target == depositModal) {
+        depositModal.style.display = "none";
       }
     }
 
@@ -505,55 +600,182 @@
       navigator.clipboard.writeText(walletAddress)
         .then(() => {
           alert('Адрес кошелька скопирован в буфер обмена!');
-          
-          // После копирования предлагаем ввести username и сумму депозита
-          const username = prompt('Введите ваш username в Telegram для комментария к переводу:');
-          if (!username) {
-            alert('Вы не ввели username. Пополнение баланса отменено.');
-            return;
-          }
-
-          const amountStr = prompt('Введите сумму депозита (максимум 0.5 TON):', '0.5');
-          if (!amountStr) {
-            alert('Вы не ввели сумму депозита. Пополнение баланса отменено.');
-            return;
-          }
-
-          let amount = parseFloat(amountStr);
-          if (isNaN(amount) || amount <= 0) {
-            alert('Некорректная сумма. Пополнение баланса отменено.');
-            return;
-          }
-          if (amount > 0.5) {
-            alert('Максимум 0.5 TON. Пополнение баланса отменено.');
-            return;
-          }
-
-          // Имитация проверки транзакции
-          // В реальном приложении здесь должна быть серверная логика для проверки транзакции
-          const isTransactionConfirmed = confirm(`Вы перевели ${amount} TON на адрес ${walletAddress} с комментарием "${username}". Подтверждаете пополнение баланса?`);
-          if (isTransactionConfirmed) {
-            // Сохраняем кошелек, если еще не сохранен
-            if (!userWallet) {
-              userWallet = walletAddress;
-              localStorage.setItem('userWallet', userWallet);
-            }
-
-            // Обновляем баланс
-            tonBalance += amount;
-            updateBalance();
-
-            alert(`Баланс успешно пополнен на ${amount} TON. Текущий баланс: ${tonBalance.toFixed(2)} TON.`);
-            modal.style.display = "none";
-          } else {
-            alert('Пополнение баланса отменено.');
-          }
         })
         .catch(err => {
           alert('Не удалось скопировать адрес.');
           console.error('Ошибка копирования: ', err);
         });
     });
+
+    // Обработчик кнопки сохранения собственного TON-адреса
+    saveWalletBtn.addEventListener('click', () => {
+      const enteredWallet = userWalletInput.value.trim();
+      if (!enteredWallet) {
+        alert('Пожалуйста, введите свой TON-адрес.');
+        return;
+      }
+
+      // Валидация TON-адреса (базовая)
+      if (!/^UQ[A-Za-z0-9_]{49}$/.test(enteredWallet)) {
+        alert('Некорректный формат TON-адреса.');
+        return;
+      }
+
+      // Сохраняем кошелек в localStorage
+      localStorage.setItem('userWallet', enteredWallet);
+      userWallet = enteredWallet;
+      alert('Ваш TON-адрес сохранён.');
+
+      // Получаем баланс с сервера
+      fetchBalance(userWallet);
+
+      depositModal.style.display = "none";
+    });
+
+    // Обработчик кнопки Депозит
+    depositBtn.addEventListener('click', () => {
+      // Открываем модальное окно депозита
+      depositModal.style.display = "block";
+
+      // Если пользователь уже ввёл свой кошелек, заполняем поле
+      if (userWallet) {
+        userWalletInput.value = userWallet;
+      }
+    });
+
+    /************************************************
+     * 5. Модальное окно для кормления
+     ************************************************/
+    const feedModal = document.getElementById('feedModal');
+    const closeFeedModalBtn = document.getElementById('closeFeedModal');
+    const activateFeedBtn = document.getElementById('activateFeedBtn');
+
+    let feedTimer = null;
+
+    // Обработчик закрытия модального окна кормления
+    closeFeedModalBtn.onclick = function() {
+      feedModal.style.display = "none";
+    }
+
+    // Обработчик клика вне модального окна кормления для закрытия
+    window.onclick = function(event) {
+      if (event.target == feedModal) {
+        feedModal.style.display = "none";
+      }
+    }
+
+    // Обработчик кнопки Активировать корм
+    activateFeedBtn.addEventListener('click', () => {
+      if (!userWallet) {
+        alert('Сначала внесите депозит, чтобы задать TON-кошелек.');
+        return;
+      }
+
+      // Проверка, активен ли уже корм
+      if (activateFeedBtn.disabled) {
+        alert('Корм уже активирован. Подождите окончания таймера.');
+        return;
+      }
+
+      // Уменьшаем баланс на 0.5 TON
+      if (tonBalance < 0.5) {
+        alert('Недостаточно TON для покупки корма.');
+        return;
+      }
+
+      tonBalance -= 0.5;
+      updateBalance();
+
+      // Деактивируем кнопку и запускаем таймер
+      activateFeedBtn.textContent = 'Активировать';
+      activateFeedBtn.disabled = true;
+
+      // Запускаем таймер на 2 часа (7200000 мс)
+      feedTimer = setTimeout(() => {
+        tonBalance += 0.05;
+        updateBalance();
+        alert('Вам поступило 0.05 TON за кормление свинки!');
+        activateFeedBtn.textContent = 'Купить';
+        activateFeedBtn.disabled = false;
+        localStorage.removeItem('feedEndTime');
+      }, 7200000); // 2 часа
+
+      alert('Корм успешно куплен! После 2 часов вы получите 0.05 TON.');
+      
+      // Сохраняем состояние таймера в localStorage
+      const endTime = Date.now() + 7200000;
+      localStorage.setItem('feedEndTime', endTime);
+    });
+
+    // Проверка состояния таймера при загрузке страницы
+    window.onload = function() {
+      const endTime = localStorage.getItem('feedEndTime');
+      if (endTime) {
+        const remainingTime = endTime - Date.now();
+        if (remainingTime > 0) {
+          activateFeedBtn.textContent = 'Активировать';
+          activateFeedBtn.disabled = true;
+
+          feedTimer = setTimeout(() => {
+            tonBalance += 0.05;
+            updateBalance();
+            alert('Вам поступило 0.05 TON за кормление свинки!');
+            activateFeedBtn.textContent = 'Купить';
+            activateFeedBtn.disabled = false;
+            localStorage.removeItem('feedEndTime');
+          }, remainingTime);
+        } else {
+          localStorage.removeItem('feedEndTime');
+        }
+      }
+    }
+
+    /************************************************
+     * 6. Функции для взаимодействия с сервером
+     ************************************************/
+
+    // Функция для получения баланса с сервера
+    function fetchBalance(wallet) {
+      // Здесь необходимо заменить URL на ваш серверный эндпоинт
+      fetch(`http://localhost:3000/balance/${wallet}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.balance !== undefined) {
+            tonBalance = parseFloat(data.balance);
+            updateBalance();
+          } else {
+            console.error(data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Ошибка при получении баланса:', error);
+        });
+    }
+
+    // Функция для обработки депозита на сервере
+    function processDeposit(username, amount) {
+      fetch('http://localhost:3000/deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ wallet: walletAddress, username: username, amount: amount })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.balance !== undefined) {
+            tonBalance = parseFloat(data.balance);
+            updateBalance();
+            alert(data.message);
+          } else {
+            alert(data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Ошибка при депозите:', error);
+          alert('Произошла ошибка при депозите.');
+        });
+    }
   </script>
 
 </body>
