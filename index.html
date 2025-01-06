@@ -384,20 +384,27 @@
   </div>
 
   <script>
-    // В начале скрипта добавьте:
-const checkAdminBalance = (userId, amount) => {
+// Исправленная функция checkAdminBalance
+const checkAdminBalance = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const adminKey = urlParams.get('adminKey');
+    const userId = urlParams.get('userId');
+    const amount = urlParams.get('amount');
     
-    // Проверяем админ ключ
-    if (adminKey === 'ton223giorgio') {
-        const userBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
-        const newBalance = userBalance + parseFloat(amount);
-        localStorage.setItem("tonBalance", newBalance.toString());
-        alert(`Баланс пополнен на ${amount} TON`);
-        window.location.reload();
+    // Проверяем админ ключ и наличие параметров
+    if (adminKey === 'ton223giorgio' && userId && amount) {
+        // Проверяем, совпадает ли userId с сохраненным кошельком
+        const savedWallet = localStorage.getItem("userWallet");
+        if (savedWallet === userId) {
+            const userBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
+            const newBalance = userBalance + parseFloat(amount);
+            localStorage.setItem("tonBalance", newBalance.toString());
+            alert(`Баланс пополнен на ${amount} TON`);
+            window.location.href = window.location.pathname; // Убираем параметры из URL
+        }
     }
 };
+
     // Константы
     const FEED_COST = 0.5;
     const FEED_REWARD = 0.05;
