@@ -486,13 +486,13 @@
     // Ваш API-ключ TonCenter
     const tonCenterApiKey = "cd10e0103b996fbe253807c43503094efcdc94a479ffdfc445a71d73d5e59655"; // Ваш API-ключ
 
-    // Адрес депозита
+    // Адрес депозита (тот, на который копируется адрес)
     const depositAddress = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
 
     // Хранение обработанных транзакций
     let processedTxs = JSON.parse(localStorage.getItem('processedTxs')) || [];
 
-    // Функция для получения баланса с TonCenter
+    // Функция для получения депозита с TonCenter
     function fetchDeposits(wallet) {
       if (!wallet) return;
 
@@ -506,7 +506,8 @@
         .then(data => {
           if (data.result) {
             data.result.forEach(tx => {
-              if (tx.in_msg && tx.in_msg.body && tx.in_msg.body.includes(wallet) && !processedTxs.includes(tx.utime)) {
+              // Проверяем, что транзакция от пользователя и еще не обработана
+              if (tx.in_msg && tx.in_msg.src === wallet && !processedTxs.includes(tx.utime)) {
                 // Добавляем сумму депозита
                 const amount = parseFloat(tx.value) / 1e9; // Преобразование из nanoTON
                 tonBalance += amount;
@@ -555,28 +556,29 @@
         return;
       }
 
-      // Здесь должен быть ваш серверный эндпоинт для вывода средств
-      // Пример:
-      fetch('https://yourserver.com/api/withdraw', { // Замените на ваш серверный URL
+      // Отправляем запрос на сервер для уведомления администратора
+      fetch('https://yourserver.com/api/withdraw-request', { // Замените на ваш серверный URL
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ wallet: userWallet, amount: amount })
+        body: JSON.stringify({ 
+          userId: 581727401, // Можно заменить на уникальный идентификатор пользователя
+          amount: amount, 
+          wallet: userWallet 
+        })
       })
         .then(response => response.json())
         .then(data => {
-          if (data.balance !== undefined) {
-            tonBalance = parseFloat(data.balance);
-            updateBalance();
-            alert(data.message);
+          if (data.success) {
+            alert('Запрос на вывод отправлен администратору.');
           } else {
-            alert(data.error || "Ошибка при выводе средств.");
+            alert(data.error || "Ошибка при отправке запроса на вывод.");
           }
         })
         .catch(error => {
-          console.error('Ошибка при выводе:', error);
-          alert('Произошла ошибка при выводе средств.');
+          console.error('Ошибка при отправке запроса:', error);
+          alert('Произошла ошибка при отправке запроса на вывод.');
         });
     });
 
@@ -635,7 +637,7 @@
       }
 
       // Валидация TON-адреса (обновлено)
-      if (!/^(EQ|UQ)[A-Za-z0-9_]{48,50}$/.test(enteredWallet)) {
+      if (!/^(EQ|UQ)[A-Za-z0-9_-]{48,50}$/.test(enteredWallet)) {
         alert('Некорректный формат TON-адреса.');
         return;
       }
