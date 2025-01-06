@@ -104,13 +104,13 @@
       top: 20px; /* Ближе к верхнему углу */
       left: 50%; /* Центрирование по горизонтали */
       transform: translateX(-50%);
-      width: 200px; /* Увеличенная миска */
+      width: 250px; /* Увеличенная миска */
       height: auto;
       z-index: 2;
     }
 
     /************************************************
-     * 5. Игровая зона: свинка ходит
+     * 5. Игровая зона: свинка находится на месте и двигается вертикально
      ************************************************/
     .game-area {
       position: absolute;
@@ -127,19 +127,19 @@
     /* Свинка с анимацией шага */
     .pig {
       position: absolute;
-      width: 200px; /* Увеличенный размер свинки */
-      height: 200px; /* Высота контейнера свинки */
+      width: 250px; /* Увеличенный размер свинки */
+      height: 250px; /* Высота контейнера свинки */
       background: url("images1/pig223.png") 0 0 no-repeat;
-      background-size: 400px 200px; /* Предполагаем 2 кадра по 200px */
+      background-size: 500px 250px; /* Предполагаем 2 кадра по 250px */
       transform: translate(-50%, -50%);
-      transition: top 6s linear; /* Медленное вертикальное перемещение */
+      transition: top 8s linear; /* Медленное вертикальное перемещение */
       animation: walk 1s steps(2) infinite; /* Анимация шага */
       left: 50%; /* Фиксированная горизонтальная позиция */
       top: 50%; /* Начальная вертикальная позиция */
     }
     @keyframes walk {
       0%   { background-position-x: 0; }
-      100% { background-position-x: -200px; } /* Смещение для следующего кадра */
+      100% { background-position-x: -250px; } /* Смещение для следующего кадра */
     }
 
     /* Речевое облачко */
@@ -214,13 +214,13 @@
     /* Адаптивность */
     @media (max-width: 600px) {
       .pig {
-        width: 120px;
-        height: 120px;
-        background-size: 240px 120px; /* Подгонка для меньших размеров */
+        width: 150px;
+        height: 150px;
+        background-size: 300px 150px; /* Подгонка для меньших размеров */
         animation: walk 0.5s steps(2) infinite;
       }
       .bowl {
-        width: 100px;
+        width: 150px;
         top: 10px;
         left: 50%;
         transform: translateX(-50%);
@@ -241,7 +241,9 @@
       }
     }
 
-    /* Модальное окно для депозита */
+    /************************************************
+     * 7. Модальное окно для депозита
+     ************************************************/
     .modal {
       display: none; /* Скрыто по умолчанию */
       position: fixed; /* Остаётся на месте */
@@ -255,7 +257,7 @@
     }
     .modal-content {
       background-color: #fefefe;
-      margin: 15% auto; /* Центрирование модала */
+      margin: 10% auto; /* Центрирование модала */
       padding: 20px;
       border: 2px solid #888;
       width: 80%;
@@ -263,6 +265,7 @@
       font-family: 'Press Start 2P', monospace;
       position: relative;
       text-align: center;
+      box-sizing: border-box;
     }
     .close {
       color: #aaaaaa;
@@ -289,6 +292,7 @@
       cursor: pointer;
       font-size: 0.8rem;
       transition: background-color 0.2s, transform 0.2s;
+      font-family: 'Press Start 2P', monospace;
     }
     .copy-btn:hover {
       background-color: #A0522D;
@@ -333,7 +337,7 @@
   <div id="depositModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
-      <p>Нажмите кнопку скопировать чтобы пополнить баланс, а также не забудьте в комментарии в переводе написать ваш юзернейм в телеграме.</p>
+      <p>Нажмите кнопку скопировать, чтобы пополнить баланс, а также не забудьте в комментарии к переводу написать ваш username в Telegram.</p>
       <button class="copy-btn" id="copyAddressBtn">Копировать адрес</button>
     </div>
   </div>
@@ -433,23 +437,21 @@
     const bowl = document.getElementById('bowl');
 
     // Размеры свинки (соответствуют CSS)
-    const pigWidth = 200;
-    const pigHeight = 200;
+    const pigWidth = 250;
+    const pigHeight = 250;
 
     // Начальная позиция свинки (центр)
     pig.style.left = '50%';
     pig.style.top = '50%';
 
-    // Интервал перемещения свинки (каждые 5 секунд)
-    setInterval(movePigSmoothly, 5000);
+    // Интервал перемещения свинки (каждые 8 секунд)
+    setInterval(movePigSmoothly, 8000);
 
     function movePigSmoothly() {
       const areaRect = gameArea.getBoundingClientRect();
       const bowlRect = bowl.getBoundingClientRect();
 
       // Вычисляем допустимые координаты внутри gameArea
-      const minX = pigWidth / 2;
-      const maxX = gameArea.clientWidth - pigWidth / 2;
       const minY = pigHeight / 2;
       const maxY = gameArea.clientHeight - pigHeight / 2;
 
@@ -503,62 +505,54 @@
       navigator.clipboard.writeText(walletAddress)
         .then(() => {
           alert('Адрес кошелька скопирован в буфер обмена!');
+          
+          // После копирования предлагаем ввести username и сумму депозита
+          const username = prompt('Введите ваш username в Telegram для комментария к переводу:');
+          if (!username) {
+            alert('Вы не ввели username. Пополнение баланса отменено.');
+            return;
+          }
+
+          const amountStr = prompt('Введите сумму депозита (максимум 0.5 TON):', '0.5');
+          if (!amountStr) {
+            alert('Вы не ввели сумму депозита. Пополнение баланса отменено.');
+            return;
+          }
+
+          let amount = parseFloat(amountStr);
+          if (isNaN(amount) || amount <= 0) {
+            alert('Некорректная сумма. Пополнение баланса отменено.');
+            return;
+          }
+          if (amount > 0.5) {
+            alert('Максимум 0.5 TON. Пополнение баланса отменено.');
+            return;
+          }
+
+          // Имитация проверки транзакции
+          // В реальном приложении здесь должна быть серверная логика для проверки транзакции
+          const isTransactionConfirmed = confirm(`Вы перевели ${amount} TON на адрес ${walletAddress} с комментарием "${username}". Подтверждаете пополнение баланса?`);
+          if (isTransactionConfirmed) {
+            // Сохраняем кошелек, если еще не сохранен
+            if (!userWallet) {
+              userWallet = walletAddress;
+              localStorage.setItem('userWallet', userWallet);
+            }
+
+            // Обновляем баланс
+            tonBalance += amount;
+            updateBalance();
+
+            alert(`Баланс успешно пополнен на ${amount} TON. Текущий баланс: ${tonBalance.toFixed(2)} TON.`);
+            modal.style.display = "none";
+          } else {
+            alert('Пополнение баланса отменено.');
+          }
         })
         .catch(err => {
           alert('Не удалось скопировать адрес.');
           console.error('Ошибка копирования: ', err);
         });
-    });
-
-    /************************************************
-     * 5. Сохранение кошелька при депозите
-     ************************************************/
-    // В предыдущем коде при депозите кошелек сохраняется только при первом вводе
-    // Добавим сохранение кошелька после подтверждения депозита
-
-    // Обработчик клика на кнопку "Копировать адрес" в модале
-    copyAddressBtn.addEventListener('click', () => {
-      // Предполагаем, что пользователь перевел средства и указал свой username
-      // В реальной интеграции сервер проверит транзакцию и обновит баланс
-
-      // Запрашиваем username
-      const username = prompt('Введите ваш username в Telegram для комментария к переводу:');
-      if (!username) {
-        alert('Вы не ввели username.');
-        return;
-      }
-
-      // Имитация успешного депозита
-      const amountStr = prompt('Введите сумму депозита (макс 0.5 TON):', '0.5');
-      if (!amountStr) return; // Пользователь отменил
-
-      let amount = parseFloat(amountStr);
-      if (isNaN(amount) || amount <= 0) {
-        alert('Некорректная сумма.');
-        return;
-      }
-      if (amount > 0.5) {
-        alert('Максимум 0.5 TON.');
-        return;
-      }
-
-      const confirmed = confirm(`Вы перевели ${amount} TON на кошелёк ${walletAddress} с комментарием "${username}". Подтверждаете пополнение баланса?`);
-      if (confirmed) {
-        // Сохраняем кошелек, если еще не сохранен
-        if (!userWallet) {
-          userWallet = walletAddress;
-          localStorage.setItem('userWallet', userWallet);
-        }
-
-        // Обновляем баланс
-        tonBalance += amount;
-        updateBalance();
-
-        alert(`Баланс успешно пополнен на ${amount} TON. Текущий баланс: ${tonBalance.toFixed(2)} TON.`);
-        modal.style.display = "none";
-      } else {
-        alert('Пополнение баланса отменено.');
-      }
     });
   </script>
 
