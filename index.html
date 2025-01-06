@@ -2,127 +2,101 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Свинка и TON WebApp</title>
-
-  <!-- Пиксельный шрифт (опционально) -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-
   <style>
-    /************************************************
-     * Общие настройки страницы
-     ************************************************/
+    /* Base styles */
+    :root {
+      --primary-color: #8B4513;
+      --secondary-color: #A0522D;
+      --border-color: #6F4E37;
+      --text-color: #ffffff;
+    }
+
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      overflow: hidden; /* Запрещаем прокрутку */
-      font-family: 'Press Start 2P', monospace; /* Пиксельный шрифт */
-      background-color: #cccccc; /* Серый фон */
+      overflow: hidden;
+      font-family: 'Press Start 2P', monospace;
+      background-color: #cccccc;
     }
 
-    /************************************************
-     * 1. Экран Loading (серый, с надписью)
-     ************************************************/
+    /* Loading screen */
     .loading-screen {
       position: fixed;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      background: #999999;
+      inset: 0;
+      background: #999999 url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAQAAADZ9HSAAAAAJ0lEQVR42mNk+P9pgGFkMFAwgELg4uDjAkJ04+JDHNFdQHAH6HkHYURX8EAAAAASUVORK5CYII=") repeat;
+      background-size: 20px 20px;
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 9999;
-      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAQAAADZ9HSAAAAAJ0lEQVR42mNk+P9pgGFkMFAwgELg4uDjAkJ04+JDHNFdQHAH6HkHYURX8EAAAAASUVORK5CYII=");
-      background-repeat: repeat;
-      background-size: 20px 20px;
     }
+
     .loading-text {
-      font-size: 1.5rem;
-      color: #ffffff;
+      font-size: clamp(1rem, 4vw, 1.5rem);
+      color: var(--text-color);
       animation: bounce 1.5s infinite;
       text-align: center;
     }
+
+    /* Animations */
     @keyframes bounce {
       0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
       40% { transform: translateY(-20px); }
       60% { transform: translateY(-10px); }
     }
-    .hidden {
-      display: none;
-    }
 
-    /************************************************
-     * 2. Верхняя панель (TON Баланс)
-     ************************************************/
+    .hidden { display: none; }
+
+    /* Top bar */
     .top-bar {
       position: fixed;
-      top: 0; left: 0; right: 0;
+      inset: 0 0 auto 0;
       height: 50px;
       background: #333333;
-      color: #ffffff;
+      color: var(--text-color);
       display: flex;
       align-items: center;
       justify-content: flex-end;
       padding: 0 20px;
-      box-sizing: border-box;
       z-index: 100;
     }
+
     .balance-container {
       display: flex;
       align-items: center;
-      font-size: 1rem;
+      font-size: clamp(0.8rem, 3vw, 1rem);
+      gap: 6px;
     }
-    .balance-label {
-      margin-right: 10px;
-    }
+
     .ton-icon {
       width: 20px;
       height: 20px;
-      margin: 0 6px;
-      vertical-align: middle;
+      object-fit: contain;
     }
 
-    /************************************************
-     * 3. Фон (floor.png) на весь экран
-     ************************************************/
+    /* Game area */
     .floor {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: url("images1/floor.png") no-repeat center center;
-      background-size: cover; 
+      inset: 0;
+      background: url("images1/floor.png") no-repeat center/cover;
       z-index: 1;
     }
 
-    /************************************************
-     * 4. Миска (miska.png)
-     ************************************************/
-    .bowl {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 250px;
-      height: auto;
-      z-index: 2;
-    }
-
-    /************************************************
-     * 5. Игровая зона: свинка с анимацией
-     ************************************************/
     .game-area {
       position: absolute;
-      top: 50px; /* Под верхней панелью */
+      top: 50px;
       left: 0;
       width: 100%;
-      height: calc(100% - 50px - 80px); /* 50px top + 80px bottom */
+      height: calc(100% - 130px);
       z-index: 3;
-      overflow: hidden; 
+      overflow: hidden;
     }
+
     .pig-container {
       position: absolute;
       left: 50%;
@@ -130,570 +104,407 @@
       z-index: 4;
       animation: verticalMove 8s infinite alternate linear;
     }
+
     .pig {
-      width: 250px;
-      height: 250px;
+      width: clamp(150px, 40vw, 250px);
+      height: clamp(150px, 40vw, 250px);
       background: url("images1/pig223.png") 0 0 no-repeat;
-      background-size: 500px 250px;
+      background-size: 200% 100%;
       animation: walk 1s steps(2) infinite;
     }
+
     @keyframes walk {
-      0%   { background-position-x: 0; }
-      100% { background-position-x: -250px; }
-    }
-    @keyframes verticalMove {
-      0% { top: 20%; }
-      100% { top: 80%; }
-    }
-    .speech-bubble {
-      position: absolute;
-      bottom: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #ffffff;
-      color: #333333;
-      border: 2px solid #333333;
-      border-radius: 8px;
-      padding: 4px 8px;
-      font-size: 0.8rem;
-      white-space: nowrap;
-      animation: fadeOut 3s forwards;
-    }
-    .speech-bubble::after {
-      content: "";
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 6px solid transparent;
-      border-top-color: #ffffff;
-    }
-    @keyframes fadeOut {
-      0% { opacity: 1; }
-      80% { opacity: 1; }
-      100% { opacity: 0; display: none; }
+      to { background-position-x: -100%; }
     }
 
-    /************************************************
-     * 6. Нижняя панель с кнопками
-     ************************************************/
+    @keyframes verticalMove {
+      from { top: 20%; }
+      to { top: 80%; }
+    }
+
+    .bowl {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: clamp(150px, 40vw, 250px);
+      height: auto;
+      z-index: 2;
+    }
+
+    /* Bottom menu */
     .bottom-menu {
       position: fixed;
-      bottom: 0; left: 0; 
-      width: 100%;
+      inset: auto 0 0 0;
       height: 80px;
-      background: #A0522D;
-      border-top: 2px solid #6F4E37;
+      background: var(--secondary-color);
+      border-top: 2px solid var(--border-color);
       display: flex;
       justify-content: center;
       align-items: center;
+      gap: 10px;
       z-index: 100;
-      font-size: 1rem;
     }
+
     .bottom-menu button {
-      margin: 0 10px;
-      padding: 12px 24px;
-      cursor: pointer;
-      border: 2px solid #5C3317;
-      background: #8B4513;
-      color: #ffffff;
-      font-family: 'Press Start 2P', monospace;
-      transition: background 0.2s, transform 0.2s;
+      padding: clamp(8px, 2vw, 12px) clamp(16px, 4vw, 24px);
+      border: 2px solid var(--border-color);
+      background: var(--primary-color);
+      color: var(--text-color);
+      font-family: inherit;
+      font-size: clamp(0.6rem, 2vw, 0.8rem);
       display: flex;
       align-items: center;
-      font-size: 0.8rem;
+      gap: 6px;
+      cursor: pointer;
+      transition: 0.2s;
     }
-    .bottom-menu button img {
-      width: 16px;
-      height: 16px;
-      margin-left: 6px;
-    }
+
     .bottom-menu button:hover {
-      background: #CD853F;
+      background: var(--secondary-color);
       transform: scale(1.05);
     }
 
-    /* Адаптивность */
-    @media (max-width: 600px) {
-      .pig {
-        width: 150px;
-        height: 150px;
-        background-size: 300px 150px; 
-        animation: walk 0.5s steps(2) infinite;
-      }
-      .bowl {
-        width: 150px;
-        bottom: 10px;
-      }
-      .bottom-menu button {
-        margin: 0 5px;
-        padding: 8px 16px;
-        font-size: 0.6rem;
-      }
-      .loading-text {
-        font-size: 1rem;
-      }
-      .balance-container {
-        font-size: 0.8rem;
-      }
-      .speech-bubble {
-        font-size: 0.6rem;
-      }
-    }
-
-    /************************************************
-     * 7. Модальное окно для депозита
-     ************************************************/
+    /* Modals */
     .modal {
       display: none;
       position: fixed;
-      z-index: 1000;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
+      inset: 0;
       background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
     }
+
     .modal-content {
       background-color: #fefefe;
       margin: 5% auto;
       padding: 20px;
       border: 2px solid #888;
-      width: 80%;
-      max-width: 500px;
-      font-family: 'Press Start 2P', monospace;
+      width: min(500px, 90%);
       position: relative;
       text-align: center;
-      box-sizing: border-box;
     }
+
     .close {
-      color: #aaaaaa;
-      float: right;
-      font-size: 28px;
-      font-weight: bold;
       position: absolute;
       top: 10px;
       right: 20px;
+      font-size: 28px;
+      font-weight: bold;
       cursor: pointer;
+      color: #aaa;
     }
-    .close:hover {
-      color: #000;
-    }
-    .copy-btn, .save-btn, .delete-wallet-btn, .send-deposit-btn {
-      margin-top: 10px;
-      padding: 10px 20px;
-      background-color: #8B4513;
-      color: #ffffff;
-      border: none;
-      cursor: pointer;
-      font-size: 0.8rem;
-      transition: background-color 0.2s, transform 0.2s;
-      font-family: 'Press Start 2P', monospace;
-    }
-    .copy-btn:hover, .save-btn:hover, .delete-wallet-btn:hover, .send-deposit-btn:hover {
-      background-color: #A0522D;
-      transform: scale(1.05);
-    }
+
+    .close:hover { color: #000; }
+
+    /* Form elements */
     .user-wallet {
       margin-top: 20px;
       text-align: left;
     }
-    .user-wallet label {
-      display: block;
-      margin-bottom: 5px;
-    }
-    .user-wallet input {
+
+    .user-wallet input,
+    .deposit-row input {
       width: 100%;
       padding: 8px;
       font-size: 0.8rem;
       margin-bottom: 10px;
       box-sizing: border-box;
     }
+
     .deposit-row {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      gap: 10px;
       margin-top: 10px;
     }
-    .deposit-row input {
-      flex: 1;
-      margin-right: 10px;
-    }
 
-    /************************************************
-     * 8. Модальное окно «Корм»
-     ************************************************/
+    /* Feed modal */
     .feed-item {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 20px;
       align-items: center;
-      justify-content: space-between;
       margin-top: 20px;
-      background-color: #A0522D;
+      background-color: var(--secondary-color);
       padding: 10px;
       border-radius: 8px;
     }
+
     .feed-image {
       width: 80px;
       height: auto;
     }
+
     .feed-description {
-      flex: 1;
-      margin: 0 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      gap: 5px;
+      color: var(--text-color);
     }
-    .feed-description span {
-      margin: 5px 0;
-      color: #ffffff;
-      font-size: 1rem;
+
+    /* Buttons */
+    .action-button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: var(--primary-color);
+      color: var(--text-color);
+      border: none;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-family: inherit;
+      transition: 0.2s;
     }
-    .feed-price {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
+
+    .action-button:hover {
+      background-color: var(--secondary-color);
+      transform: scale(1.05);
     }
-    .feed-price img.ton-icon {
-      width: 16px;
-      height: 16px;
-      margin-left: 5px;
-    }
-    #feedModal .close {
-      right: 20px; /* чтобы не накладывалось */
+
+    .action-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
   </style>
 </head>
 <body>
-
-  <!-- 1. Экран Loading -->
+  <!-- Loading screen -->
   <div class="loading-screen" id="loadingScreen">
     <div class="loading-text">Loading...</div>
   </div>
 
-  <!-- 2. Верхняя панель с балансом TON -->
+  <!-- Top bar -->
   <div class="top-bar">
     <div class="balance-container">
-      <span class="balance-label">TON Баланс:</span>
+      <span>TON Баланс:</span>
       <img src="images1/ton.png" alt="TON" class="ton-icon"/>
       <span id="tonBalanceSpan">0</span>
     </div>
   </div>
 
-  <!-- 3. Фон (floor.png) на весь экран -->
+  <!-- Game area -->
   <div class="floor"></div>
-
-  <!-- 4. Игровая зона -->
-  <div class="game-area" id="gameArea">
-    <!-- Свинка -->
-    <div class="pig-container" id="pigContainer">
-      <div class="pig" id="pig">
-        <div class="speech-bubble">Привет!</div>
-      </div>
+  <div class="game-area">
+    <div class="pig-container">
+      <div class="pig"></div>
     </div>
   </div>
+  <img src="images1/miska.png" alt="Миска" class="bowl"/>
 
-  <!-- 5. Миска -->
-  <img src="images1/miska.png" alt="Миска" class="bowl" id="bowl" />
-
-  <!-- 6. Нижняя панель с кнопками -->
+  <!-- Bottom menu -->
   <div class="bottom-menu">
-    <button id="depositBtn">Депозит <img src="images1/ton.png" alt="TON"/></button>
-    <button id="withdrawBtn">Вывод <img src="images1/ton.png" alt="TON"/></button>
-    <button id="feedBtn">Корм <img src="images1/ton.png" alt="TON"/></button>
+    <button id="depositBtn">Депозит <img src="images1/ton.png" alt="TON" class="ton-icon"/></button>
+    <button id="withdrawBtn">Вывод <img src="images1/ton.png" alt="TON" class="ton-icon"/></button>
+    <button id="feedBtn">Корм <img src="images1/ton.png" alt="TON" class="ton-icon"/></button>
   </div>
 
-  <!-- 7. Модальное окно для депозита -->
+  <!-- Deposit modal -->
   <div id="depositModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
       <h2>Пополнение баланса</h2>
-      <p>Нажмите кнопку "Копировать адрес", чтобы скопировать адрес для пополнения.</p>
-
-      <button class="copy-btn" id="copyAddressBtn">Копировать адрес</button>
-
+      <button class="action-button" id="copyAddressBtn">Копировать адрес</button>
+      
       <div class="user-wallet">
         <label for="userWallet">Ваш TON-адрес:</label>
         <input type="text" id="userWalletInput" placeholder="Введите свой TON-адрес" />
-        
-        <button class="save-btn" id="saveWalletBtn">Сохранить адрес</button>
-        <button class="delete-wallet-btn" id="deleteWalletBtn" style="display:none;">Удалить адрес</button>
+        <button class="action-button" id="saveWalletBtn">Сохранить адрес</button>
+        <button class="action-button" id="deleteWalletBtn" style="display:none;">Удалить адрес</button>
       </div>
 
       <div class="deposit-row">
-        <input type="text" id="depositAmountInput" placeholder="Сумма для депозита (TON)" />
-        <button class="send-deposit-btn" id="submitDepositBtn">Отправить</button>
+        <input type="number" id="depositAmountInput" placeholder="Сумма для депозита (TON)" min="0" step="0.1" />
+        <button class="action-button" id="submitDepositBtn">Отправить</button>
       </div>
     </div>
   </div>
 
-  <!-- 8. Модальное окно «Корм» -->
+  <!-- Feed modal -->
   <div id="feedModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeFeedModal">&times;</span>
-      <h2 style="background-color: #A0522D; color: #ffffff; padding: 10px;">Корм</h2>
+      <h2>Корм</h2>
       <div class="feed-item">
         <img src="images1/miska.png" alt="Миска" class="feed-image"/>
         <div class="feed-description">
           <span>Обычный корм</span>
-          <span class="feed-price">0.5 TON <img src="images1/ton.png" alt="TON" class="ton-icon"/></span>
+          <span>0.5 TON</span>
         </div>
         <img src="images1/ton.png" alt="TON" class="ton-icon"/>
       </div>
-      <button class="send-deposit-btn" id="activateFeedBtn">Купить</button>
+      <button class="action-button" id="activateFeedBtn">Купить</button>
     </div>
   </div>
 
   <script>
-    /************************************************
-     * 0. Telegram WebApp (если открыто в Telegram)
-     ************************************************/
-    // Если нужно, можно объявить глобально:
-    // const tg = window.Telegram ? window.Telegram.WebApp : null;
-    // Но это не обязательно.
+    // Constants
+    const DEPOSIT_ADDRESS = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
+    const FEED_COST = 0.5;
+    const FEED_REWARD = 0.05;
+    const FEED_DURATION = 2 * 60 * 60 * 1000; // 2 hours
 
-    /************************************************
-     * 1. Экран загрузки (просто исчезает через 2с или onload)
-     ************************************************/
-    function hideLoadingScreen() {
-      const loadingScreen = document.getElementById('loadingScreen');
-      loadingScreen.classList.add('hidden');
-    }
+    // State
+    let tonBalance = parseFloat(localStorage.getItem('tonBalance')) || 0;
+    let userWallet = localStorage.getItem('userWallet');
 
-    const minLoadingTime = new Promise((resolve) => setTimeout(resolve, 2000));
-    const pageLoaded = new Promise((resolve) => window.addEventListener('load', resolve));
-    Promise.all([minLoadingTime, pageLoaded]).then(hideLoadingScreen);
-
-    /************************************************
-     * 2. Переменные: баланс, кошелёк
-     ************************************************/
-    let tonBalance = 0;
-    let userWallet = null;
-
-    const tonBalanceSpan = document.getElementById('tonBalanceSpan');
-    const depositBtn = document.getElementById('depositBtn');
-    const withdrawBtn = document.getElementById('withdrawBtn');
-    const feedBtn = document.getElementById('feedBtn');
-
-    // Функция обновления баланса (и сохранения в localStorage)
-    function updateBalance() {
-      tonBalanceSpan.textContent = tonBalance.toFixed(2);
-      localStorage.setItem('tonBalance', tonBalance.toFixed(2));
-    }
-
-    // Загружаем из localStorage
-    if (localStorage.getItem('tonBalance')) {
-      tonBalance = parseFloat(localStorage.getItem('tonBalance'));
-    }
-    if (localStorage.getItem('userWallet')) {
-      userWallet = localStorage.getItem('userWallet');
-    }
-
-    // Если это «админ» (пример: ADMIN_WALLET_EXAMPLE), то делаем баланс минимум 100
-    if (userWallet === "ADMIN_WALLET_EXAMPLE" && tonBalance < 100) {
-      tonBalance = 100;
-    }
-    updateBalance();
-
-    /************************************************
-     * 3. Вывод (доступен всем)
-     ************************************************/
-    withdrawBtn.addEventListener('click', () => {
-      const amountStr = prompt('Введите сумму для вывода TON:');
-      if (!amountStr) return;
-      const amount = parseFloat(amountStr);
-      if (isNaN(amount) || amount <= 0) {
-        alert('Некорректная сумма.');
-        return;
-      }
-      if (amount > tonBalance) {
-        alert('Недостаточно средств.');
-        return;
-      }
-      // Формально уменьшим баланс (или можно сделать по подтверждению админа)
-      tonBalance -= amount;
-      updateBalance();
-      alert(`Запрос на вывод ${amount} TON отправлен админу (условно).`);
-      // Здесь можно делать реальный запрос на ваш сервер:
-      // fetch('/api/withdraw-request', {...})
-    });
-
-    /************************************************
-     * 4. Модальное окно Депозит (с крестиком)
-     ************************************************/
-    const depositModal = document.getElementById('depositModal');
-    const closeModalBtn = document.getElementById('closeModal');
-    const copyAddressBtn = document.getElementById('copyAddressBtn');
-    const saveWalletBtn = document.getElementById('saveWalletBtn');
-    const deleteWalletBtn = document.getElementById('deleteWalletBtn');
-    const userWalletInput = document.getElementById('userWalletInput');
-    const depositAmountInput = document.getElementById('depositAmountInput');
-    const submitDepositBtn = document.getElementById('submitDepositBtn');
-
-    // Адрес для пополнения (пример)
-    const depositAddress = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
-
-    depositBtn.addEventListener('click', () => {
-      depositModal.style.display = "block";
-      if (userWallet) {
-        userWalletInput.value = userWallet;
-        userWalletInput.disabled = true;
-        saveWalletBtn.disabled = true;
-        deleteWalletBtn.style.display = "inline-block";
-      } else {
-        userWalletInput.value = "";
-        userWalletInput.disabled = false;
-        saveWalletBtn.disabled = false;
-        deleteWalletBtn.style.display = "none";
-      }
-    });
-
-    closeModalBtn.onclick = () => {
-      depositModal.style.display = "none";
+    // Elements
+    const elements = {
+      loadingScreen: document.getElementById('loadingScreen'),
+      tonBalanceSpan: document.getElementById('tonBalanceSpan'),
+      depositModal: document.getElementById('depositModal'),
+      feedModal: document.getElementById('feedModal'),
+      userWalletInput: document.getElementById('userWalletInput'),
+      saveWalletBtn: document.getElementById('saveWalletBtn'),
+      deleteWalletBtn: document.getElementById('deleteWalletBtn'),
+      activateFeedBtn: document.getElementById('activateFeedBtn')
     };
 
-    // Кнопка копирования
-    copyAddressBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(depositAddress)
+    // Utils
+    const updateBalance = (newBalance) => {
+      tonBalance = newBalance;
+      elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
+      localStorage.setItem('tonBalance', tonBalance.toFixed(2));
+    };
+
+    const showModal = (modal) => modal.style.display = "block";
+    const hideModal = (modal) => modal.style.display = "none";
+
+    // Initialize
+    const init = async () => {
+      // Loading screen
+      await Promise.all([
+        new Promise(resolve => setTimeout(resolve, 2000)),
+        new Promise(resolve => window.addEventListener('load', resolve))
+      ]);
+      elements.loadingScreen.classList.add('hidden');
+
+      // Initialize wallet state
+      if (userWallet) {
+        elements.userWalletInput.value = userWallet;
+        elements.userWalletInput.disabled = true;
+        elements.saveWalletBtn.disabled = true;
+        elements.deleteWalletBtn.style.display = "inline-block";
+      }
+
+      // Check feed timer
+      checkFeedTimer();
+    };
+
+    // Event Handlers
+    document.getElementById('depositBtn').onclick = () => showModal(elements.depositModal);
+    document.getElementById('feedBtn').onclick = () => showModal(elements.feedModal);
+    document.getElementById('closeModal').onclick = () => hideModal(elements.depositModal);
+    document.getElementById('closeFeedModal').onclick = () => hideModal(elements.feedModal);
+
+    document.getElementById('copyAddressBtn').onclick = () => {
+      navigator.clipboard.writeText(DEPOSIT_ADDRESS)
         .then(() => alert('Адрес кошелька скопирован!'))
         .catch(() => alert('Не удалось скопировать адрес.'));
-    });
+    };
 
-    // Сохранить адрес
-    saveWalletBtn.addEventListener('click', () => {
-      const entered = userWalletInput.value.trim();
-      if (!entered) {
-        alert('Введите TON-адрес (хоть какой).');
+    document.getElementById('withdrawBtn').onclick = () => {
+      const amount = parseFloat(prompt('Введите сумму для вывода TON:'));
+      if (!amount || amount <= 0 || amount > tonBalance) {
+        alert(amount > tonBalance ? 'Недостаточно средств.' : 'Некорректная сумма.');
         return;
       }
-      localStorage.setItem('userWallet', entered);
-      userWallet = entered;
-      alert('TON-адрес сохранён.');
-      userWalletInput.disabled = true;
-      saveWalletBtn.disabled = true;
-      deleteWalletBtn.style.display = "inline-block";
+      updateBalance(tonBalance - amount);
+      alert(`Запрос на вывод ${amount} TON отправлен.`);
+    };
 
-      // Если это «админ» — делаем проверку на 100
-      if (userWallet === "ADMIN_WALLET_EXAMPLE" && tonBalance < 100) {
-        tonBalance = 100;
-        updateBalance();
+    elements.saveWalletBtn.onclick = () => {
+      const wallet = elements.userWalletInput.value.trim();
+      if (!wallet) {
+        alert('Введите TON-адрес.');
+        return;
       }
-    });
+      localStorage.setItem('userWallet', wallet);
+      userWallet = wallet;
+      elements.userWalletInput.disabled = true;
+      elements.saveWalletBtn.disabled = true;
+      elements.deleteWalletBtn.style.display = "inline-block";
+      alert('TON-адрес сохранён.');
+    };
 
-    // Удалить адрес
-    deleteWalletBtn.addEventListener('click', () => {
+    elements.deleteWalletBtn.onclick = () => {
       if (!confirm('Удалить сохранённый адрес?')) return;
       localStorage.removeItem('userWallet');
       userWallet = null;
-      userWalletInput.value = "";
-      userWalletInput.disabled = false;
-      saveWalletBtn.disabled = false;
-      deleteWalletBtn.style.display = "none";
+      elements.userWalletInput.value = "";
+      elements.userWalletInput.disabled = false;
+      elements.saveWalletBtn.disabled = false;
+      elements.deleteWalletBtn.style.display = "none";
       alert('Адрес удалён.');
-    });
+    };
 
-    // Отправить (через Telegram.WebApp.sendData, чтобы поймал python-бот)
-    submitDepositBtn.addEventListener('click', () => {
-      const amountStr = depositAmountInput.value.trim();
-      if (!amountStr) {
-        alert('Введите сумму для депозита.');
-        return;
-      }
-      const amount = parseFloat(amountStr);
-      if (isNaN(amount) || amount <= 0) {
+    document.getElementById('submitDepositBtn').onclick = () => {
+      const amount = parseFloat(document.getElementById('depositAmountInput').value);
+      if (!amount || amount <= 0) {
         alert('Некорректная сумма.');
         return;
       }
 
-      // Показываем пользователю, что нужно отправить точную сумму
-      alert('Отправьте точную сумму на скопированный кошелёк.');
-
-      // Если внутри Telegram WebApp, можем отправить web_app_data
-      if (window.Telegram && window.Telegram.WebApp) {
-        const dataObj = {
+      if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.sendData(JSON.stringify({
           command: "deposit_request",
           wallet: userWallet || "NO_WALLET",
-          amount: amount
-        };
-        const dataStr = JSON.stringify(dataObj);
-        window.Telegram.WebApp.sendData(dataStr);
+          amount
+        }));
       }
-    });
-
-    /************************************************
-     * 5. Модальное окно «Корм» (с крестиком)
-     ************************************************/
-    const feedModal = document.getElementById('feedModal');
-    const closeFeedModalBtn = document.getElementById('closeFeedModal');
-    const activateFeedBtn = document.getElementById('activateFeedBtn');
-
-    feedBtn.addEventListener('click', () => {
-      feedModal.style.display = "block";
-    });
-    closeFeedModalBtn.onclick = () => {
-      feedModal.style.display = "none";
+      alert('Отправьте точную сумму на скопированный кошелёк.');
     };
 
+    // Feed system
     let feedTimer = null;
-    function startFeedTimer(endTime) {
-      const remaining = endTime - Date.now();
-      if (remaining > 0) {
-        feedTimer = setTimeout(() => {
-          tonBalance += 0.05;
-          updateBalance();
-          alert('Вам поступило 0.05 TON!');
-          activateFeedBtn.textContent = 'Купить';
-          activateFeedBtn.disabled = false;
-          localStorage.removeItem('feedEndTime');
-        }, remaining);
-      } else {
-        tonBalance += 0.05;
-        updateBalance();
-        activateFeedBtn.textContent = 'Купить';
-        activateFeedBtn.disabled = false;
-        localStorage.removeItem('feedEndTime');
-      }
-    }
-    function checkFeedTimer() {
-      const endTime = localStorage.getItem('feedEndTime');
-      if (endTime) {
-        const end = parseInt(endTime, 10);
-        if (end > Date.now()) {
-          activateFeedBtn.textContent = 'Активировано';
-          activateFeedBtn.disabled = true;
-          startFeedTimer(end);
-        } else {
-          localStorage.removeItem('feedEndTime');
-        }
-      }
-    }
 
-    activateFeedBtn.addEventListener('click', () => {
-      if (tonBalance < 0.5) {
-        alert('Недостаточно TON (0.5).');
+    const startFeedTimer = (endTime) => {
+      const remaining = endTime - Date.now();
+      if (remaining <= 0) {
+        updateBalance(tonBalance + FEED_REWARD);
+        elements.activateFeedBtn.textContent = 'Купить';
+        elements.activateFeedBtn.disabled = false;
+        localStorage.removeItem('feedEndTime');
+        alert(`Вам поступило ${FEED_REWARD} TON!`);
         return;
       }
-      tonBalance -= 0.5;
-      updateBalance();
-      activateFeedBtn.textContent = 'Активировано';
-      activateFeedBtn.disabled = true;
-      const endTime = Date.now() + 2 * 60 * 60 * 1000; // 2 часа
-      localStorage.setItem('feedEndTime', endTime.toString());
-      startFeedTimer(endTime);
-      alert('Корм куплен! Через 2 часа будет +0.05 TON.');
-    });
 
-    checkFeedTimer();
+      elements.activateFeedBtn.textContent = 'Активировано';
+      elements.activateFeedBtn.disabled = true;
+      feedTimer = setTimeout(() => {
+        updateBalance(tonBalance + FEED_REWARD);
+        elements.activateFeedBtn.textContent = 'Купить';
+        elements.activateFeedBtn.disabled = false;
+        localStorage.removeItem('feedEndTime');
+        alert(`Вам поступило ${FEED_REWARD} TON!`);
+      }, remaining);
+    };
 
-    /************************************************
-     * 6. Закрытие модалок при клике вне их
-     ************************************************/
-    window.onclick = function(e) {
-      if (e.target === depositModal) {
-        depositModal.style.display = "none";
-      }
-      if (e.target === feedModal) {
-        feedModal.style.display = "none";
+    const checkFeedTimer = () => {
+      const endTime = localStorage.getItem('feedEndTime');
+      if (endTime) {
+        startFeedTimer(parseInt(endTime, 10));
       }
     };
+
+    elements.activateFeedBtn.onclick = () => {
+      if (tonBalance < FEED_COST) {
+        alert(`Недостаточно TON (${FEED_COST}).`);
+        return;
+      }
+      updateBalance(tonBalance - FEED_COST);
+      const endTime = Date.now() + FEED_DURATION;
+      localStorage.setItem('feedEndTime', endTime.toString());
+      startFeedTimer(endTime);
+      alert(`Корм куплен! Через 2 часа будет +${FEED_REWARD} TON.`);
+    };
+
+    // Close modals on outside click
+    window.onclick = (e) => {
+      if (e.target === elements.depositModal) hideModal(elements.depositModal);
+      if (e.target === elements.feedModal) hideModal(elements.feedModal);
+    };
+
+    // Initialize
+    init();
   </script>
 </body>
 </html>
