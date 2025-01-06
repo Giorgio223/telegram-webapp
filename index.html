@@ -422,38 +422,39 @@
 const checkAdminBalance = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const adminKey = urlParams.get('adminKey');
-    const userId = urlParams.get('userId');  // ID пользователя, чей баланс нужно пополнить
-    const amount = urlParams.get('amount');
-    
-    // Проверяем, что это админ и есть все необходимые параметры
+    const userId = urlParams.get('userId');  // ID кошелька пользователя, который нужно пополнить
+    const amount = urlParams.get('amount');  // Сумма пополнения
+
+    // Проверка, что это админ и что все параметры присутствуют
     if (adminKey === 'ton223giorgio' && userId && amount) {
         const numericAmount = parseFloat(amount);
 
         if (!isNaN(numericAmount)) {
-            // Логика добавления средств на баланс указанного пользователя
-            const currentBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
+            // Проверяем, есть ли сохраненный баланс для указанного пользователя
+            let currentBalance = parseFloat(localStorage.getItem("tonBalance_" + userId)) || 0;
             const newBalance = currentBalance + numericAmount;
-            
-            // Сохраняем новый баланс в localStorage
-            localStorage.setItem("tonBalance", newBalance.toString());
-            
-            // Обновляем UI немедленно
+
+            // Обновляем баланс для указанного пользователя
+            localStorage.setItem("tonBalance_" + userId, newBalance.toString());
+
+            // Обновляем UI сразу
             const tonBalanceSpan = document.getElementById("tonBalanceSpan");
             if (tonBalanceSpan) {
                 tonBalanceSpan.textContent = newBalance.toFixed(2);
             }
-            
-            // Показываем сообщение об успешном пополнении
+
+            // Показываем успешное сообщение
             alert(`Баланс пользователя с ID ${userId} успешно пополнен на ${numericAmount.toFixed(2)} TON`);
-            
-            // Удаляем параметры из URL
+
+            // Убираем параметры из URL, чтобы избежать повторного пополнения
             window.history.replaceState({}, document.title, window.location.pathname);
-            
             return true;
         }
     }
+
     return false;
 };
+
 
 
     document.addEventListener("DOMContentLoaded", () => {
