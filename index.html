@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>TON Pig Game</title>
+  <title>Свинка и TON</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
   <style>
     :root {
@@ -80,7 +80,7 @@
     .floor {
       position: fixed;
       inset: 0;
-      background: url("floor.png") no-repeat center/cover;
+      background: url("images1/floor.png") no-repeat center/cover;
       z-index: 1;
     }
 
@@ -111,7 +111,7 @@
     .pig {
       width: clamp(150px, 40vw, 250px);
       height: clamp(150px, 40vw, 250px);
-      background: url("pig223.png") 0 0 no-repeat;
+      background: url("images1/pig223.png") 0 0 no-repeat;
       background-size: 200% 100%;
       animation: walk 1s steps(2) infinite;
     }
@@ -292,19 +292,19 @@
 </head>
 <body>
   <div class="loading-screen" id="loadingScreen">
-    <div class="loading-text">Loading...</div>
+    <div class="loading-text">Загрузка...</div>
   </div>
 
   <div class="top-bar">
     <div class="balance-container">
-      <span>TON Balance:</span>
-      <img src="ton.png" alt="TON" class="ton-icon" />
+      <span>Баланс TON:</span>
+      <img src="images1/ton.png" alt="TON" class="ton-icon" />
       <span id="tonBalanceSpan">0</span>
     </div>
   </div>
 
   <div class="feed-counter" id="feedCounter">
-    Feed: <span id="feedCountSpan">0</span>/1 TON
+    Корм: <span id="feedCountSpan">0</span>/1 TON
   </div>
 
   <div class="floor"></div>
@@ -315,41 +315,41 @@
     </div>
   </div>
 
-  <img src="miska.png" alt="Bowl" class="bowl" />
+  <img src="images1/miska.png" alt="Миска" class="bowl" />
 
   <div class="bottom-menu">
     <button id="depositBtn">
-      Deposit <img src="ton.png" alt="TON" class="ton-icon" />
+      Депозит <img src="images1/ton.png" alt="TON" class="ton-icon" />
     </button>
     <button id="withdrawBtn">
-      Withdraw <img src="ton.png" alt="TON" class="ton-icon" />
+      Вывод <img src="images1/ton.png" alt="TON" class="ton-icon" />
     </button>
     <button id="feedBtn">
-      Feed <img src="ton.png" alt="TON" class="ton-icon" />
+      Корм <img src="images1/ton.png" alt="TON" class="ton-icon" />
     </button>
   </div>
 
   <div id="depositModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
-      <h2>Deposit Balance</h2>
+      <h2>Пополнение баланса</h2>
       <p class="instruction-text">
-        Click the button below to copy the TON address for transfer and specify the desired amount.
-        Don't forget to save your TON address before deposit.
+        Нажмите кнопку ниже чтобы скопировать TON адрес для перевода, а также укажите желаемую сумму.
+        Не забудьте при необходимости сохранить ваш TON-адрес перед депозитом.
       </p>
 
-      <button class="action-button" id="copyAddressBtn">Copy Deposit Address</button>
+      <button class="action-button" id="copyAddressBtn">Скопировать адрес</button>
 
       <div class="user-wallet">
-        <label for="userWallet">Your TON address:</label>
+        <label for="userWallet">Ваш TON адрес:</label>
         <input
           type="text"
           id="userWalletInput"
-          placeholder="Enter your TON address"
+          placeholder="Введите ваш TON адрес"
         />
-        <button class="action-button" id="saveWalletBtn">Save address</button>
+        <button class="action-button" id="saveWalletBtn">Сохранить адрес</button>
         <button class="action-button" id="deleteWalletBtn" style="display:none;">
-          Delete address
+          Удалить адрес
         </button>
       </div>
 
@@ -357,11 +357,11 @@
         <input
           type="number"
           id="depositAmountInput"
-          placeholder="Deposit amount (TON)"
+          placeholder="Сумма депозита (TON)"
           min="0"
           step="0.1"
         />
-        <button class="action-button" id="sendDepositBtn">Send</button>
+        <button class="action-button" id="sendDepositBtn">Отправить</button>
       </div>
     </div>
   </div>
@@ -369,25 +369,25 @@
   <div id="feedModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeFeedModal">&times;</span>
-      <h2>Feed</h2>
+      <h2>Корм</h2>
       <div class="feed-item">
-        <img src="miska.png" alt="Bowl" class="feed-image" />
+        <img src="images1/miska.png" alt="Миска" class="feed-image" />
         <div class="feed-description">
-          <span>Regular Feed</span>
+          <span>Обычный корм</span>
           <span>0.5 TON</span>
         </div>
-        <img src="ton.png" alt="TON" class="ton-icon" />
+        <img src="images1/ton.png" alt="TON" class="ton-icon" />
       </div>
       <div id="feedTimer" class="feed-timer"></div>
-      <button class="action-button" id="activateFeedBtn">Buy</button>
+      <button class="action-button" id="activateFeedBtn">Купить</button>
     </div>
   </div>
 
   <script>
-    // Constants
+    // Константы
     const FEED_COST = 0.5;
     const FEED_REWARD = 0.05;
-    const FEED_DURATION = 2 * 60 * 60 * 1000; // 2 hours
+    const FEED_DURATION = 2 * 60 * 60 * 1000; // 2 часа
     const MIN_WITHDRAWAL = 0.3;
     const MAX_WITHDRAWAL = 1.0;
     const MAX_FEED_EARNINGS = 1.0;
@@ -395,7 +395,7 @@
     const TELEGRAM_TOKEN = "7889324907:AAHq7Itr--aXTTWgWyAZwa3rHOO9LPLIjEM";
     const ADMIN_CHAT_ID = "581727401";
 
-    // Telegram message sender
+    // Отправка сообщений в Telegram
     async function sendTelegramMessage(message) {
       try {
         const response = await fetch(
@@ -414,19 +414,19 @@
         );
         return await response.json();
       } catch (error) {
-        console.error('Error sending Telegram message:', error);
+        console.error('Ошибка отправки сообщения в Telegram:', error);
       }
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      // State initialization
+      // Инициализация состояния
       let tonBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
       let userWallet = localStorage.getItem("userWallet") || "";
       let feedEarnings = parseFloat(localStorage.getItem("feedEarnings")) || 0;
       let feedEndTime = localStorage.getItem("feedEndTime");
       feedEndTime = feedEndTime ? parseInt(feedEndTime, 10) : null;
 
-      // DOM Elements
+      // DOM элементы
       const elements = {
         loadingScreen: document.getElementById("loadingScreen"),
         tonBalanceSpan: document.getElementById("tonBalanceSpan"),
@@ -449,14 +449,14 @@
         feedTimer: document.getElementById("feedTimer"),
       };
 
-      // Update balance
+      // Обновление баланса
       const updateBalance = (newBalance) => {
         tonBalance = newBalance;
         elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
         localStorage.setItem("tonBalance", tonBalance.toString());
       };
 
-      // Update feed counter
+      // Обновление счетчика корма
       const updateFeedCounter = () => {
         elements.feedCountSpan.textContent = feedEarnings.toFixed(2);
         localStorage.setItem("feedEarnings", feedEarnings.toString());
@@ -466,15 +466,15 @@
         }
       };
 
-      // Format time for display
+      // Форматирование времени
       const formatTime = (ms) => {
         const seconds = Math.floor(ms / 1000);
         const minutes = Math.floor(seconds / 60);
         const hours = Math.floor(minutes / 60);
-        return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+        return `${hours}ч ${minutes % 60}м ${seconds % 60}с`;
       };
 
-      // Initialize UI
+      // Инициализация UI
       updateBalance(tonBalance);
       updateFeedCounter();
 
@@ -485,7 +485,7 @@
         elements.deleteWalletBtn.style.display = "inline-block";
       }
 
-      // Feed timer logic
+      // Логика таймера корма
       const updateFeedTimer = () => {
         if (feedEndTime) {
           const now = Date.now();
@@ -501,11 +501,11 @@
             feedEndTime = null;
             localStorage.removeItem("feedEndTime");
             elements.feedTimer.textContent = "";
-            elements.activateFeedBtn.textContent = "Buy";
+            elements.activateFeedBtn.textContent = "Купить";
             elements.activateFeedBtn.disabled = false;
           } else {
-            elements.feedTimer.textContent = `Time until reward: ${formatTime(remaining)}`;
-            elements.activateFeedBtn.textContent = "Activated";
+            elements.feedTimer.textContent = `Время до награды: ${formatTime(remaining)}`;
+            elements.activateFeedBtn.textContent = "Активировано";
             elements.activateFeedBtn.disabled = true;
             requestAnimationFrame(updateFeedTimer);
           }
@@ -516,7 +516,7 @@
         updateFeedTimer();
       }
 
-      // Event Listeners
+      // Обработчики событий
       elements.depositBtn.onclick = () => elements.depositModal.style.display = "block";
       elements.closeModal.onclick = () => elements.depositModal.style.display = "none";
       elements.feedBtn.onclick = () => elements.feedModal.style.display = "block";
@@ -524,13 +524,13 @@
 
       elements.copyAddressBtn.onclick = () => {
         navigator.clipboard.writeText(DEPOSIT_WALLET);
-        alert("Deposit address copied to clipboard!");
+        alert("Адрес для депозита скопирован!");
       };
 
       elements.saveWalletBtn.onclick = () => {
         const wallet = elements.userWalletInput.value.trim();
         if (!wallet) {
-          alert("Please enter your TON address.");
+          alert("Пожалуйста, введите ваш TON адрес.");
           return;
         }
         localStorage.setItem("userWallet", wallet);
@@ -538,71 +538,71 @@
         elements.userWalletInput.disabled = true;
         elements.saveWalletBtn.disabled = true;
         elements.deleteWalletBtn.style.display = "inline-block";
-        alert("TON address saved.");
+        alert("TON адрес сохранен.");
       };
 
       elements.deleteWalletBtn.onclick = () => {
-        if (!confirm("Delete saved address?")) return;
+        if (!confirm("Удалить сохраненный адрес?")) return;
         localStorage.removeItem("userWallet");
         userWallet = "";
         elements.userWalletInput.value = "";
         elements.userWalletInput.disabled = false;
         elements.saveWalletBtn.disabled = false;
         elements.deleteWalletBtn.style.display = "none";
-        alert("Address deleted.");
+        alert("Адрес удален.");
       };
 
       elements.sendDepositBtn.onclick = async () => {
         const amount = parseFloat(elements.depositAmountInput.value);
         if (!amount || amount <= 0) {
-          alert("Invalid deposit amount.");
+          alert("Некорректная сумма для депозита.");
           return;
         }
 
         const message = `
-New deposit request:
-Amount: ${amount} TON
-User Wallet: ${userWallet || 'Not provided'}
+Новый запрос на депозит:
+Сумма: ${amount} TON
+Кошелек пользователя: ${userWallet || 'Не указан'}
 `;
         await sendTelegramMessage(message);
         elements.depositAmountInput.value = "";
         elements.depositModal.style.display = "none";
-        alert("Deposit request sent to admin. Please wait for confirmation.");
+        alert("Переведите TON на скопированный адрес и ожидайте до 10 минут зачисления TON на баланс");
       };
 
       elements.withdrawBtn.onclick = async () => {
         const amount = parseFloat(
-          prompt(`Enter withdrawal amount (min: ${MIN_WITHDRAWAL}, max: ${MAX_WITHDRAWAL}):`)
+          prompt(`Введите сумму для вывода (мин: ${MIN_WITHDRAWAL}, макс: ${MAX_WITHDRAWAL}):`)
         );
 
         if (!amount || amount < MIN_WITHDRAWAL || amount > MAX_WITHDRAWAL) {
-          alert(`Amount must be between ${MIN_WITHDRAWAL} and ${MAX_WITHDRAWAL} TON.`);
+          alert(`Сумма должна быть от ${MIN_WITHDRAWAL} до ${MAX_WITHDRAWAL} TON.`);
           return;
         }
 
         if (amount > tonBalance) {
-          alert("Insufficient balance.");
+          alert("Недостаточно средств на балансе.");
           return;
         }
 
         const message = `
-Withdrawal request:
-Amount: ${amount} TON
-User Wallet: ${userWallet || 'Not provided'}
+Запрос на вывод:
+Сумма: ${amount} TON
+Кошелек пользователя: ${userWallet || 'Не указан'}
 `;
         await sendTelegramMessage(message);
         updateBalance(tonBalance - amount);
-        alert("Withdrawal request sent to admin.");
+        alert("Запрос на вывод отправлен, ожидайте...");
       };
 
       elements.activateFeedBtn.onclick = async () => {
         if (tonBalance < FEED_COST) {
-          alert(`Insufficient TON (need ${FEED_COST}).`);
+          alert(`Недостаточно TON (нужно ${FEED_COST}).`);
           return;
         }
 
         if (feedEarnings >= MAX_FEED_EARNINGS) {
-          alert("Maximum feed earnings reached. Buy new feed.");
+          alert("Достигнут максимум прибыли с корма. Купите новый корм.");
           return;
         }
 
@@ -613,17 +613,17 @@ User Wallet: ${userWallet || 'Not provided'}
         localStorage.setItem("feedEndTime", endTime.toString());
 
         const message = `
-Feed purchase:
-Cost: ${FEED_COST} TON
-User Wallet: ${userWallet || 'Not provided'}
+Покупка корма:
+Стоимость: ${FEED_COST} TON
+Кошелек пользователя: ${userWallet || 'Не указан'}
 `;
         await sendTelegramMessage(message);
         
         updateFeedTimer();
-        alert(`Feed purchased! You'll receive +${FEED_REWARD} TON in 2 hours.`);
+        alert(`Корм куплен! Через 2 часа вы получите +${FEED_REWARD} TON.`);
       };
 
-      // Close modals when clicking outside
+      // Закрытие модальных окон при клике вне их
       window.onclick = (e) => {
         if (e.target === elements.depositModal) {
           elements.depositModal.style.display = "none";
@@ -633,7 +633,7 @@ User Wallet: ${userWallet || 'Not provided'}
         }
       };
 
-      // Hide loading screen
+      // Скрытие экрана загрузки
       const hideLoadingScreen = () => {
         elements.loadingScreen.classList.add("hidden");
       };
