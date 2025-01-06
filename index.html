@@ -127,7 +127,7 @@
       /* Фон прозрачный, так как floor.png уже установлен как фон body */
     }
 
-    /* Свинка с анимацией шага */
+    /* Свинка с анимацией шага и вертикального движения */
     .pig-container {
       position: absolute;
       left: 50%; /* Центрирование по горизонтали */
@@ -404,7 +404,7 @@
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
       <h2>Пополнение баланса</h2>
-      <p>Нажмите кнопку "Копировать адрес", чтобы пополнить баланс, а также не забудьте в комментарии к переводу написать ваш username в Telegram.</p>
+      <p>Нажмите кнопку "Копировать адрес", чтобы пополнить баланс, а также не забудьте в комментарии к переводу написать ваш TON-адрес.</p>
       <button class="copy-btn" id="copyAddressBtn">Копировать адрес</button>
       <div class="user-wallet">
         <label for="userWallet">Ваш TON-адрес:</label>
@@ -435,10 +435,24 @@
     /************************************************
      * 1. Управление экраном загрузки
      ************************************************/
-    window.addEventListener('load', () => {
-      document.getElementById('loadingScreen').classList.add('hidden');
-      checkFeedTimer();
+    // Функция для скрытия экрана загрузки после 2 секунд и полной загрузки страницы
+    function hideLoadingScreen() {
+      const loadingScreen = document.getElementById('loadingScreen');
+      loadingScreen.classList.add('hidden');
+    }
+
+    // Создаем Promise, который срабатывает через 2 секунды
+    const minLoadingTime = new Promise((resolve) => {
+      setTimeout(resolve, 2000);
     });
+
+    // Создаем Promise, который срабатывает при полной загрузке страницы
+    const pageLoaded = new Promise((resolve) => {
+      window.addEventListener('load', resolve);
+    });
+
+    // Когда оба Promise выполнятся, скрываем экран загрузки
+    Promise.all([minLoadingTime, pageLoaded]).then(hideLoadingScreen);
 
     /************************************************
      * 2. Управление балансом TON и депозитом
@@ -454,40 +468,70 @@
     // Функция обновления отображения баланса
     function updateBalance() {
       tonBalanceSpan.textContent = tonBalance.toFixed(2);
+      localStorage.setItem('tonBalance', tonBalance.toFixed(2));
+    }
+
+    // Инициализируем баланс из localStorage, если есть
+    if (localStorage.getItem('tonBalance')) {
+      tonBalance = parseFloat(localStorage.getItem('tonBalance'));
+      updateBalance();
     }
 
     // Проверяем, есть ли кошелек в localStorage
     if (localStorage.getItem('userWallet')) {
       userWallet = localStorage.getItem('userWallet');
-      fetchBalance(userWallet);
+      fetchDeposits(userWallet);
     }
-
-    // Инициализируем баланс
-    updateBalance();
 
     // Ваш API-ключ TonCenter
     const tonCenterApiKey = "cd10e0103b996fbe253807c43503094efcdc94a479ffdfc445a71d73d5e59655"; // Ваш API-ключ
 
+    // Адрес депозита
+    const depositAddress = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
+
+    // Хранение обработанных транзакций
+    let processedTxs = JSON.parse(localStorage.getItem('processedTxs')) || [];
+
     // Функция для получения баланса с TonCenter
-    function fetchBalance(wallet) {
-      fetch(`https://toncenter.com/api/v2/getBalance?address=${wallet}`, {
+    function fetchDeposits(wallet) {
+      if (!wallet) return;
+
+      // Получаем все транзакции к депозитному адресу
+      fetch(`https://toncenter.com/api/v2/getTransactions?address=${depositAddress}&limit=100`, {
         headers: {
           'X-API-KEY': tonCenterApiKey
         }
       })
         .then(response => response.json())
         .then(data => {
-          if (data.result !== undefined) {
-            tonBalance = parseFloat(data.result) / 1e9; // Преобразование из nanoTON
-            updateBalance();
+          if (data.result) {
+            data.result.forEach(tx => {
+              if (tx.in_msg && tx.in_msg.body && tx.in_msg.body.includes(wallet) && !processedTxs.includes(tx.utime)) {
+                // Добавляем сумму депозита
+                const amount = parseFloat(tx.value) / 1e9; // Преобразование из nanoTON
+                tonBalance += amount;
+                updateBalance();
+                // Добавляем в обработанные транзакции
+                processedTxs.push(tx.utime);
+                localStorage.setItem('processedTxs', JSON.stringify(processedTxs));
+                alert(`Получен депозит: ${amount} TON`);
+              }
+            });
           } else {
-            console.error(data.error || "Неизвестная ошибка при получении баланса.");
+            console.error(data.error || "Неизвестная ошибка при получении транзакций.");
           }
         })
         .catch(error => {
-          console.error('Ошибка при получении баланса:', error);
+          console.error('Ошибка при получении транзакций:', error);
         });
     }
+
+    // Периодическая проверка депозитов каждые 30 секунд
+    setInterval(() => {
+      if (userWallet) {
+        fetchDeposits(userWallet);
+      }
+    }, 30000); // 30 секунд
 
     // Обработчик кнопки Вывод
     withdrawBtn.addEventListener('click', () => {
@@ -544,13 +588,7 @@
     });
 
     /************************************************
-     * 3. Управление движением свинки
-     ************************************************/
-    // Свинка теперь движется только вертикально через анимацию CSS
-    // Удаляем JavaScript-код, который меняет позицию свинки вручную
-
-    /************************************************
-     * 4. Управление модальными окнами
+     * 3. Управление модальными окнами
      ************************************************/
     const depositModal = document.getElementById('depositModal');
     const closeModalBtn = document.getElementById('closeModal');
@@ -561,9 +599,6 @@
     const feedModal = document.getElementById('feedModal');
     const closeFeedModalBtn = document.getElementById('closeFeedModal');
     const activateFeedBtn = document.getElementById('activateFeedBtn');
-
-    // Адрес вашего кошелька TON
-    const walletAddress = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
 
     // Обработчики закрытия модальных окон
     closeModalBtn.onclick = () => { depositModal.style.display = "none"; }
@@ -581,7 +616,7 @@
 
     // Обработчик кнопки копирования адреса
     copyAddressBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(walletAddress)
+      navigator.clipboard.writeText(depositAddress)
         .then(() => {
           alert('Адрес кошелька скопирован в буфер обмена!');
         })
@@ -599,8 +634,8 @@
         return;
       }
 
-      // Валидация TON-адреса (базовая)
-      if (!/^UQ[A-Za-z0-9_]{49}$/.test(enteredWallet)) {
+      // Валидация TON-адреса (обновлено)
+      if (!/^(EQ|UQ)[A-Za-z0-9_]{48,50}$/.test(enteredWallet)) {
         alert('Некорректный формат TON-адреса.');
         return;
       }
@@ -610,8 +645,8 @@
       userWallet = enteredWallet;
       alert('Ваш TON-адрес сохранён.');
 
-      // Получаем баланс с TonCenter
-      fetchBalance(userWallet);
+      // Получаем депозиты
+      fetchDeposits(userWallet);
 
       depositModal.style.display = "none";
     });
@@ -628,7 +663,7 @@
     });
 
     /************************************************
-     * 5. Модальное окно для кормления
+     * 4. Модальное окно для кормления
      ************************************************/
     let feedTimer = null;
 
@@ -705,7 +740,7 @@
     }
 
     /************************************************
-     * 6. Дополнительные функции
+     * 5. Дополнительные функции
      ************************************************/
 
     // Можно добавить здесь дополнительные функции по необходимости
