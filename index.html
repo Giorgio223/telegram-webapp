@@ -1,16 +1,10 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  />
-  <title>Свинка и TON WebApp</title>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
-    rel="stylesheet"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>TON Pig Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
   <style>
     :root {
       --primary-color: #8B4513;
@@ -19,8 +13,7 @@
       --text-color: #ffffff;
     }
 
-    html,
-    body {
+    html, body {
       margin: 0;
       padding: 0;
       width: 100%;
@@ -33,9 +26,7 @@
     .loading-screen {
       position: fixed;
       inset: 0;
-      background: #999999
-        url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAQAAADZ9HSAAAAAJ0lEQVR42mNk+P9pgGFkMFAwgELg4uDjAkJ04+JDHNFdQHAH6HkHYURX8EAAAAASUVORK5CYII=")
-        repeat;
+      background: #999999 url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAQAAADZ9HSAAAAAJ0lEQVR42mNk+P9pgGFkMFAwgELg4uDjAkJ04+JDHNFdQHAH6HkHYURX8EAAAAASUVORK5CYII=") repeat;
       background-size: 20px 20px;
       display: flex;
       justify-content: center;
@@ -51,19 +42,9 @@
     }
 
     @keyframes bounce {
-      0%,
-      20%,
-      50%,
-      80%,
-      100% {
-        transform: translateY(0);
-      }
-      40% {
-        transform: translateY(-20px);
-      }
-      60% {
-        transform: translateY(-10px);
-      }
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-20px); }
+      60% { transform: translateY(-10px); }
     }
 
     .hidden {
@@ -99,7 +80,7 @@
     .floor {
       position: fixed;
       inset: 0;
-      background: url("images1/floor.png") no-repeat center/cover;
+      background: url("floor.png") no-repeat center/cover;
       z-index: 1;
     }
 
@@ -113,7 +94,6 @@
       overflow: hidden;
     }
 
-    /* Свинья по центру (50%, 50%) и двигается не так сильно */
     .pig-container {
       position: absolute;
       top: 50%;
@@ -124,26 +104,20 @@
     }
 
     @keyframes horizontalMove {
-      0% {
-        transform: translate(-50%, -50%) translateX(-20%);
-      }
-      100% {
-        transform: translate(-50%, -50%) translateX(20%);
-      }
+      0% { transform: translate(-50%, -50%) translateX(-20%); }
+      100% { transform: translate(-50%, -50%) translateX(20%); }
     }
 
     .pig {
       width: clamp(150px, 40vw, 250px);
       height: clamp(150px, 40vw, 250px);
-      background: url("images1/pig223.png") 0 0 no-repeat;
+      background: url("pig223.png") 0 0 no-repeat;
       background-size: 200% 100%;
       animation: walk 1s steps(2) infinite;
     }
 
     @keyframes walk {
-      to {
-        background-position-x: -100%;
-      }
+      to { background-position-x: -100%; }
     }
 
     .bowl {
@@ -307,74 +281,75 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+
+    .feed-timer {
+      margin-top: 15px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #333;
+    }
   </style>
 </head>
 <body>
-  <!-- Экран загрузки -->
   <div class="loading-screen" id="loadingScreen">
     <div class="loading-text">Loading...</div>
   </div>
 
-  <!-- Верхняя панель с балансом -->
   <div class="top-bar">
     <div class="balance-container">
-      <span>TON Баланс:</span>
-      <img src="images1/ton.png" alt="TON" class="ton-icon" />
+      <span>TON Balance:</span>
+      <img src="ton.png" alt="TON" class="ton-icon" />
       <span id="tonBalanceSpan">0</span>
     </div>
   </div>
 
-  <!-- Счётчик корма -->
   <div class="feed-counter" id="feedCounter">
-    Корм: <span id="feedCountSpan">0</span>/1 TON
+    Feed: <span id="feedCountSpan">0</span>/1 TON
   </div>
 
-  <!-- Фон (пол) -->
   <div class="floor"></div>
 
-  <!-- Игровая зона со свиньёй -->
   <div class="game-area">
     <div class="pig-container">
       <div class="pig"></div>
     </div>
   </div>
 
-  <!-- Миска -->
-  <img src="images1/miska.png" alt="Миска" class="bowl" />
+  <img src="miska.png" alt="Bowl" class="bowl" />
 
-  <!-- Нижнее меню -->
   <div class="bottom-menu">
     <button id="depositBtn">
-      Депозит <img src="images1/ton.png" alt="TON" class="ton-icon" />
+      Deposit <img src="ton.png" alt="TON" class="ton-icon" />
     </button>
     <button id="withdrawBtn">
-      Вывод <img src="images1/ton.png" alt="TON" class="ton-icon" />
+      Withdraw <img src="ton.png" alt="TON" class="ton-icon" />
     </button>
     <button id="feedBtn">
-      Корм <img src="images1/ton.png" alt="TON" class="ton-icon" />
+      Feed <img src="ton.png" alt="TON" class="ton-icon" />
     </button>
   </div>
 
-  <!-- Окно пополнения -->
   <div id="depositModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
-      <h2>Пополнение баланса</h2>
+      <h2>Deposit Balance</h2>
       <p class="instruction-text">
-        Нажмите кнопку ниже, чтобы указать желаемую сумму. <br>
-        Не забудьте при необходимости сохранить ваш TON-адрес (это поле чисто «для виду»).
+        Click the button below to copy the TON address for transfer and specify the desired amount.
+        Don't forget to save your TON address before deposit.
       </p>
 
+      <button class="action-button" id="copyAddressBtn">Copy Deposit Address</button>
+
       <div class="user-wallet">
-        <label for="userWallet">Ваш TON-адрес:</label>
+        <label for="userWallet">Your TON address:</label>
         <input
           type="text"
           id="userWalletInput"
-          placeholder="Введите свой TON-адрес (необязательно)"
+          placeholder="Enter your TON address"
         />
-        <button class="action-button" id="saveWalletBtn">Сохранить адрес</button>
+        <button class="action-button" id="saveWalletBtn">Save address</button>
         <button class="action-button" id="deleteWalletBtn" style="display:none;">
-          Удалить адрес
+          Delete address
         </button>
       </div>
 
@@ -382,100 +357,127 @@
         <input
           type="number"
           id="depositAmountInput"
-          placeholder="Сумма для депозита (TON)"
+          placeholder="Deposit amount (TON)"
           min="0"
           step="0.1"
         />
-        <button class="action-button" id="approveDepositBtn">Одобрить</button>
+        <button class="action-button" id="sendDepositBtn">Send</button>
       </div>
     </div>
   </div>
 
-  <!-- Окно покупки корма -->
   <div id="feedModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeFeedModal">&times;</span>
-      <h2>Корм</h2>
+      <h2>Feed</h2>
       <div class="feed-item">
-        <img
-          src="images1/miska.png"
-          alt="Миска"
-          class="feed-image"
-        />
+        <img src="miska.png" alt="Bowl" class="feed-image" />
         <div class="feed-description">
-          <span>Обычный корм</span>
+          <span>Regular Feed</span>
           <span>0.5 TON</span>
         </div>
-        <img src="images1/ton.png" alt="TON" class="ton-icon" />
+        <img src="ton.png" alt="TON" class="ton-icon" />
       </div>
-      <button class="action-button" id="activateFeedBtn">Купить</button>
+      <div id="feedTimer" class="feed-timer"></div>
+      <button class="action-button" id="activateFeedBtn">Buy</button>
     </div>
   </div>
 
   <script>
-    // ========= КОНСТАНТЫ =========
-    const FEED_COST = 0.5;            // Стоимость корма
-    const FEED_REWARD = 0.05;         // Награда за корм
-    const FEED_DURATION = 2 * 60 * 60 * 1000; // 2 часа кормления
+    // Constants
+    const FEED_COST = 0.5;
+    const FEED_REWARD = 0.05;
+    const FEED_DURATION = 2 * 60 * 60 * 1000; // 2 hours
+    const MIN_WITHDRAWAL = 0.3;
+    const MAX_WITHDRAWAL = 1.0;
+    const MAX_FEED_EARNINGS = 1.0;
+    const DEPOSIT_WALLET = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
+    const TELEGRAM_TOKEN = "7889324907:AAHq7Itr--aXTTWgWyAZwa3rHOO9LPLIjEM";
+    const ADMIN_CHAT_ID = "581727401";
 
-    const MIN_WITHDRAWAL = 0.3;       // Минимальная сумма вывода
-    const MAX_WITHDRAWAL = 1.0;       // Максимальная сумма вывода
-
-    const MAX_FEED_EARNINGS = 1.0;    // Максимум прибыли с одного корма
+    // Telegram message sender
+    async function sendTelegramMessage(message) {
+      try {
+        const response = await fetch(
+          `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              chat_id: ADMIN_CHAT_ID,
+              text: message,
+              parse_mode: 'HTML',
+            }),
+          }
+        );
+        return await response.json();
+      } catch (error) {
+        console.error('Error sending Telegram message:', error);
+      }
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
-      // ИНИЦИАЛИЗАЦИЯ ПЕРЕМЕННЫХ
+      // State initialization
       let tonBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
       let userWallet = localStorage.getItem("userWallet") || "";
       let feedEarnings = parseFloat(localStorage.getItem("feedEarnings")) || 0;
+      let feedEndTime = localStorage.getItem("feedEndTime");
+      feedEndTime = feedEndTime ? parseInt(feedEndTime, 10) : null;
 
-      // Ссылки на элементы DOM
+      // DOM Elements
       const elements = {
         loadingScreen: document.getElementById("loadingScreen"),
         tonBalanceSpan: document.getElementById("tonBalanceSpan"),
         depositModal: document.getElementById("depositModal"),
         feedModal: document.getElementById("feedModal"),
-
         userWalletInput: document.getElementById("userWalletInput"),
         saveWalletBtn: document.getElementById("saveWalletBtn"),
         deleteWalletBtn: document.getElementById("deleteWalletBtn"),
-
-        approveDepositBtn: document.getElementById("approveDepositBtn"),
+        copyAddressBtn: document.getElementById("copyAddressBtn"),
+        sendDepositBtn: document.getElementById("sendDepositBtn"),
         depositAmountInput: document.getElementById("depositAmountInput"),
         withdrawBtn: document.getElementById("withdrawBtn"),
-
         closeModal: document.getElementById("closeModal"),
         closeFeedModal: document.getElementById("closeFeedModal"),
         depositBtn: document.getElementById("depositBtn"),
         feedBtn: document.getElementById("feedBtn"),
         activateFeedBtn: document.getElementById("activateFeedBtn"),
-
         feedCountSpan: document.getElementById("feedCountSpan"),
         feedCounter: document.getElementById("feedCounter"),
+        feedTimer: document.getElementById("feedTimer"),
       };
 
-      // ======= ФУНКЦИИ =========
-      // Обновление баланса
+      // Update balance
       const updateBalance = (newBalance) => {
         tonBalance = newBalance;
         elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
         localStorage.setItem("tonBalance", tonBalance.toString());
       };
 
-      // Обновление счётчика корма
+      // Update feed counter
       const updateFeedCounter = () => {
         elements.feedCountSpan.textContent = feedEarnings.toFixed(2);
+        localStorage.setItem("feedEarnings", feedEarnings.toString());
+        
         if (feedEarnings >= MAX_FEED_EARNINGS) {
           elements.activateFeedBtn.style.display = "none";
-          alert("Достигнут максимум прибыли с корма. Купите новый корм.");
         }
       };
 
-      // Инициализация UI
+      // Format time for display
+      const formatTime = (ms) => {
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+      };
+
+      // Initialize UI
       updateBalance(tonBalance);
       updateFeedCounter();
 
-      // Если у пользователя уже есть сохранённый адрес
       if (userWallet) {
         elements.userWalletInput.value = userWallet;
         elements.userWalletInput.disabled = true;
@@ -483,20 +485,52 @@
         elements.deleteWalletBtn.style.display = "inline-block";
       }
 
-      // ======= События интерфейса =======
-      // Открыть / закрыть модалку "Депозит"
-      elements.depositBtn.onclick = () => (elements.depositModal.style.display = "block");
-      elements.closeModal.onclick = () => (elements.depositModal.style.display = "none");
+      // Feed timer logic
+      const updateFeedTimer = () => {
+        if (feedEndTime) {
+          const now = Date.now();
+          const remaining = feedEndTime - now;
 
-      // Открыть / закрыть модалку "Корм"
-      elements.feedBtn.onclick = () => (elements.feedModal.style.display = "block");
-      elements.closeFeedModal.onclick = () => (elements.feedModal.style.display = "none");
+          if (remaining <= 0) {
+            if (feedEarnings < MAX_FEED_EARNINGS) {
+              const reward = Math.min(FEED_REWARD, MAX_FEED_EARNINGS - feedEarnings);
+              feedEarnings += reward;
+              updateBalance(tonBalance + reward);
+              updateFeedCounter();
+            }
+            feedEndTime = null;
+            localStorage.removeItem("feedEndTime");
+            elements.feedTimer.textContent = "";
+            elements.activateFeedBtn.textContent = "Buy";
+            elements.activateFeedBtn.disabled = false;
+          } else {
+            elements.feedTimer.textContent = `Time until reward: ${formatTime(remaining)}`;
+            elements.activateFeedBtn.textContent = "Activated";
+            elements.activateFeedBtn.disabled = true;
+            requestAnimationFrame(updateFeedTimer);
+          }
+        }
+      };
 
-      // Сохранить адрес кошелька
+      if (feedEndTime) {
+        updateFeedTimer();
+      }
+
+      // Event Listeners
+      elements.depositBtn.onclick = () => elements.depositModal.style.display = "block";
+      elements.closeModal.onclick = () => elements.depositModal.style.display = "none";
+      elements.feedBtn.onclick = () => elements.feedModal.style.display = "block";
+      elements.closeFeedModal.onclick = () => elements.feedModal.style.display = "none";
+
+      elements.copyAddressBtn.onclick = () => {
+        navigator.clipboard.writeText(DEPOSIT_WALLET);
+        alert("Deposit address copied to clipboard!");
+      };
+
       elements.saveWalletBtn.onclick = () => {
         const wallet = elements.userWalletInput.value.trim();
         if (!wallet) {
-          alert("Введите TON-адрес или оставьте поле пустым, если не нужно.");
+          alert("Please enter your TON address.");
           return;
         }
         localStorage.setItem("userWallet", wallet);
@@ -504,111 +538,92 @@
         elements.userWalletInput.disabled = true;
         elements.saveWalletBtn.disabled = true;
         elements.deleteWalletBtn.style.display = "inline-block";
-        alert("TON-адрес сохранён.");
+        alert("TON address saved.");
       };
 
-      // Удалить адрес кошелька
       elements.deleteWalletBtn.onclick = () => {
-        if (!confirm("Удалить сохранённый адрес?")) return;
+        if (!confirm("Delete saved address?")) return;
         localStorage.removeItem("userWallet");
         userWallet = "";
         elements.userWalletInput.value = "";
         elements.userWalletInput.disabled = false;
         elements.saveWalletBtn.disabled = false;
         elements.deleteWalletBtn.style.display = "none";
-        alert("Адрес удалён.");
+        alert("Address deleted.");
       };
 
-      // Кнопка "Одобрить" (депозит) — просто увеличивает баланс
-      elements.approveDepositBtn.onclick = () => {
+      elements.sendDepositBtn.onclick = async () => {
         const amount = parseFloat(elements.depositAmountInput.value);
         if (!amount || amount <= 0) {
-          alert("Некорректная сумма для депозита.");
+          alert("Invalid deposit amount.");
           return;
         }
-        // Прибавляем сумму к текущему балансу
-        updateBalance(tonBalance + amount);
-        alert(`Ваш баланс увеличен на ${amount.toFixed(2)} TON.`);
-        // Можно очистить поле ввода
+
+        const message = `
+New deposit request:
+Amount: ${amount} TON
+User Wallet: ${userWallet || 'Not provided'}
+`;
+        await sendTelegramMessage(message);
         elements.depositAmountInput.value = "";
+        elements.depositModal.style.display = "none";
+        alert("Deposit request sent to admin. Please wait for confirmation.");
       };
 
-      // Вывод
-      elements.withdrawBtn.onclick = () => {
+      elements.withdrawBtn.onclick = async () => {
         const amount = parseFloat(
-          prompt(`Введите сумму для вывода TON (мин: ${MIN_WITHDRAWAL}, макс: ${MAX_WITHDRAWAL}):`)
+          prompt(`Enter withdrawal amount (min: ${MIN_WITHDRAWAL}, max: ${MAX_WITHDRAWAL}):`)
         );
+
         if (!amount || amount < MIN_WITHDRAWAL || amount > MAX_WITHDRAWAL) {
-          alert(`Сумма должна быть от ${MIN_WITHDRAWAL} до ${MAX_WITHDRAWAL} TON.`);
+          alert(`Amount must be between ${MIN_WITHDRAWAL} and ${MAX_WITHDRAWAL} TON.`);
           return;
         }
+
         if (amount > tonBalance) {
-          alert("Недостаточно средств на балансе.");
+          alert("Insufficient balance.");
           return;
         }
-        // Списываем
+
+        const message = `
+Withdrawal request:
+Amount: ${amount} TON
+User Wallet: ${userWallet || 'Not provided'}
+`;
+        await sendTelegramMessage(message);
         updateBalance(tonBalance - amount);
-        alert(`Вы вывели ${amount.toFixed(2)} TON.`);
+        alert("Withdrawal request sent to admin.");
       };
 
-      // Логика корма
-      let feedTimer = null;
-
-      const startFeedTimer = (endTime) => {
-        const remaining = endTime - Date.now();
-        if (remaining <= 0) {
-          // Таймер истёк — добавить награду (если ещё не достигнут максимум)
-          if (feedEarnings < MAX_FEED_EARNINGS) {
-            const reward = Math.min(FEED_REWARD, MAX_FEED_EARNINGS - feedEarnings);
-            feedEarnings += reward;
-            updateBalance(tonBalance + reward);
-            localStorage.setItem("feedEarnings", feedEarnings.toString());
-            updateFeedCounter();
-          }
-          elements.activateFeedBtn.textContent = "Купить";
-          elements.activateFeedBtn.disabled = false;
-          localStorage.removeItem("feedEndTime");
-
-          if (feedEarnings >= MAX_FEED_EARNINGS) {
-            elements.activateFeedBtn.style.display = "none";
-          }
-          return;
-        }
-        // Если таймер идёт, блокируем кнопку
-        elements.activateFeedBtn.textContent = "Активировано";
-        elements.activateFeedBtn.disabled = true;
-        feedTimer = setTimeout(() => startFeedTimer(endTime), remaining);
-      };
-
-      elements.activateFeedBtn.onclick = () => {
+      elements.activateFeedBtn.onclick = async () => {
         if (tonBalance < FEED_COST) {
-          alert(`Недостаточно TON (нужно ${FEED_COST}).`);
+          alert(`Insufficient TON (need ${FEED_COST}).`);
           return;
         }
+
         if (feedEarnings >= MAX_FEED_EARNINGS) {
-          alert("Достигнут максимум прибыли с корма. Купите новый корм.");
+          alert("Maximum feed earnings reached. Buy new feed.");
           return;
         }
-        // Оплата корма
+
         updateBalance(tonBalance - FEED_COST);
-
-        // Запуск таймера на 2 часа
+        
         const endTime = Date.now() + FEED_DURATION;
+        feedEndTime = endTime;
         localStorage.setItem("feedEndTime", endTime.toString());
-        startFeedTimer(endTime);
-        alert(`Корм куплен! Через 2 часа будет +${FEED_REWARD} TON.`);
+
+        const message = `
+Feed purchase:
+Cost: ${FEED_COST} TON
+User Wallet: ${userWallet || 'Not provided'}
+`;
+        await sendTelegramMessage(message);
+        
+        updateFeedTimer();
+        alert(`Feed purchased! You'll receive +${FEED_REWARD} TON in 2 hours.`);
       };
 
-      // Проверка, не идёт ли уже кормление
-      const checkFeedTimer = () => {
-        const endTime = localStorage.getItem("feedEndTime");
-        if (endTime) {
-          startFeedTimer(parseInt(endTime, 10));
-        }
-      };
-      checkFeedTimer();
-
-      // Закрываем модалки при клике вне их
+      // Close modals when clicking outside
       window.onclick = (e) => {
         if (e.target === elements.depositModal) {
           elements.depositModal.style.display = "none";
@@ -618,14 +633,13 @@
         }
       };
 
-      // Скрываем экран загрузки (2с минимальной задержки + load)
+      // Hide loading screen
       const hideLoadingScreen = () => {
         elements.loadingScreen.classList.add("hidden");
       };
+
       const minLoadingTime = new Promise((resolve) => setTimeout(resolve, 2000));
-      const pageLoaded = new Promise((resolve) =>
-        window.addEventListener("load", resolve)
-      );
+      const pageLoaded = new Promise((resolve) => window.addEventListener("load", resolve));
       Promise.all([minLoadingTime, pageLoaded]).then(hideLoadingScreen);
     });
   </script>
