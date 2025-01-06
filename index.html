@@ -54,7 +54,7 @@
     }
 
     /************************************************
-     * 2. Верхняя панель (Баланс TON)
+     * 2. Верхняя панель (TON Баланс)
      ************************************************/
     .top-bar {
       position: fixed;
@@ -73,6 +73,9 @@
       display: flex;
       align-items: center;
       font-size: 1rem;
+    }
+    .balance-label {
+      margin-right: 10px;
     }
     .ton-icon {
       width: 20px;
@@ -101,7 +104,7 @@
      ************************************************/
     .bowl {
       position: absolute;
-      top: 20px; /* Ближе к верхнему углу */
+      bottom: 20px; /* Ближе к нижнему краю */
       left: 50%; /* Центрирование по горизонтали */
       transform: translateX(-50%);
       width: 250px; /* Увеличенная миска */
@@ -125,20 +128,28 @@
     }
 
     /* Свинка с анимацией шага */
-    .pig {
+    .pig-container {
       position: absolute;
+      left: 50%; /* Центрирование по горизонтали */
+      transform: translateX(-50%);
+      z-index: 4;
+      animation: verticalMove 8s infinite alternate linear;
+    }
+    .pig {
       width: 250px; /* Увеличенный размер свинки */
-      height: 125px; /* Высота для одного кадра (двух кадров в ширину) */
+      height: 250px; /* Высота свинки */
       background: url("images1/pig223.png") 0 0 no-repeat;
-      background-size: 500px 125px; /* Двойная ширина для двух кадров */
-      transform: translate(-50%, -50%);
+      background-size: 500px 250px; /* Двойная ширина для двух кадров */
       animation: walk 1s steps(2) infinite; /* Анимация шага */
-      left: 50%; /* Фиксированная горизонтальная позиция */
-      top: 50%; /* Начальная вертикальная позиция */
     }
     @keyframes walk {
       0%   { background-position-x: 0; }
       100% { background-position-x: -250px; } /* Смещение на ширину одного кадра */
+    }
+
+    @keyframes verticalMove {
+      0% { top: 20%; }
+      100% { top: 80%; }
     }
 
     /* Речевое облачко */
@@ -214,13 +225,13 @@
     @media (max-width: 600px) {
       .pig {
         width: 150px;
-        height: 75px; /* Половина для одного кадра */
-        background-size: 300px 75px; /* Подгонка для меньших размеров */
+        height: 150px; /* Пропорционально уменьшена высота */
+        background-size: 300px 150px; /* Подгонка для меньших размеров */
         animation: walk 0.5s steps(2) infinite;
       }
       .bowl {
         width: 150px;
-        top: 10px;
+        bottom: 10px;
         left: 50%;
         transform: translateX(-50%);
       }
@@ -359,6 +370,7 @@
   <!-- 2. Верхняя панель с балансом TON -->
   <div class="top-bar">
     <div class="balance-container">
+      <span class="balance-label">TON Баланс:</span>
       <img src="images1/ton.png" alt="TON" class="ton-icon"/>
       <span id="tonBalanceSpan">0</span>
     </div>
@@ -370,8 +382,10 @@
   <!-- 4. Игровая зона -->
   <div class="game-area" id="gameArea">
     <!-- Свинка -->
-    <div class="pig" id="pig">
-      <div class="speech-bubble">Привет!</div>
+    <div class="pig-container" id="pigContainer">
+      <div class="pig" id="pig">
+        <div class="speech-bubble">Привет!</div>
+      </div>
     </div>
   </div>
 
@@ -390,7 +404,7 @@
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
       <h2>Пополнение баланса</h2>
-      <p>Нажмите кнопку скопировать, чтобы пополнить баланс, а также не забудьте в комментарии к переводу написать ваш username в Telegram.</p>
+      <p>Нажмите кнопку "Копировать адрес", чтобы пополнить баланс, а также не забудьте в комментарии к переводу написать ваш username в Telegram.</p>
       <button class="copy-btn" id="copyAddressBtn">Копировать адрес</button>
       <div class="user-wallet">
         <label for="userWallet">Ваш TON-адрес:</label>
@@ -423,8 +437,6 @@
      ************************************************/
     window.addEventListener('load', () => {
       document.getElementById('loadingScreen').classList.add('hidden');
-      
-      // Проверка состояния таймера кормления при загрузке страницы
       checkFeedTimer();
     });
 
@@ -454,7 +466,7 @@
     updateBalance();
 
     // Ваш API-ключ TonCenter
-    const tonCenterApiKey = "YOUR_API_KEY"; // Замените на ваш реальный API-ключ
+    const tonCenterApiKey = "cd10e0103b996fbe253807c43503094efcdc94a479ffdfc445a71d73d5e59655"; // Ваш API-ключ
 
     // Функция для получения баланса с TonCenter
     function fetchBalance(wallet) {
@@ -534,43 +546,8 @@
     /************************************************
      * 3. Управление движением свинки
      ************************************************/
-    const pig = document.getElementById('pig');
-    const gameArea = document.getElementById('gameArea');
-    const bowl = document.getElementById('bowl');
-
-    // Интервал перемещения свинки (каждые 8 секунд)
-    setInterval(movePigSmoothly, 8000);
-
-    function movePigSmoothly() {
-      const areaRect = gameArea.getBoundingClientRect();
-      const bowlRect = bowl.getBoundingClientRect();
-
-      // Вычисляем допустимые координаты внутри gameArea
-      const minY = pig.offsetHeight / 2;
-      const maxY = gameArea.clientHeight - pig.offsetHeight / 2;
-
-      // Генерируем случайные координаты (только вертикально)
-      let newY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
-
-      // Получаем текущую X позицию свинки (фиксирована)
-      const currentX = areaRect.width / 2; // 50% от ширины gameArea
-
-      // Проверяем, не пересекается ли новая позиция с миской
-      const bowlCenterX = bowlRect.left + bowlRect.width / 2 - areaRect.left;
-      const bowlCenterY = bowlRect.top + bowlRect.height / 2 - areaRect.top;
-      const distance = Math.hypot(currentX - bowlCenterX, newY - bowlCenterY);
-
-      const minDistance = (bowlRect.width / 2) + (pig.offsetWidth / 2) + 20; // 20px отступ
-
-      if (distance < minDistance) {
-        // Если слишком близко к миске — ищем новую позицию
-        movePigSmoothly();
-        return;
-      }
-
-      // Устанавливаем новые координаты свинки (только Y)
-      pig.style.top = `${newY}px`;
-    }
+    // Свинка теперь движется только вертикально через анимацию CSS
+    // Удаляем JavaScript-код, который меняет позицию свинки вручную
 
     /************************************************
      * 4. Управление модальными окнами
