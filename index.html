@@ -6,7 +6,6 @@
   <title>Свинка и TON WebApp</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
-    /* Base styles */
     :root {
       --primary-color: #8B4513;
       --secondary-color: #A0522D;
@@ -24,7 +23,6 @@
       background-color: #cccccc;
     }
 
-    /* Loading screen */
     .loading-screen {
       position: fixed;
       inset: 0;
@@ -43,7 +41,6 @@
       text-align: center;
     }
 
-    /* Animations */
     @keyframes bounce {
       0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
       40% { transform: translateY(-20px); }
@@ -52,7 +49,6 @@
 
     .hidden { display: none; }
 
-    /* Top bar */
     .top-bar {
       position: fixed;
       inset: 0 0 auto 0;
@@ -79,7 +75,6 @@
       object-fit: contain;
     }
 
-    /* Game area */
     .floor {
       position: fixed;
       inset: 0;
@@ -102,7 +97,12 @@
       left: 50%;
       transform: translateX(-50%);
       z-index: 4;
-      animation: verticalMove 8s infinite alternate linear;
+      animation: horizontalMove 4s infinite alternate ease-in-out;
+    }
+
+    @keyframes horizontalMove {
+      0% { transform: translateX(-80%); }
+      100% { transform: translateX(80%); }
     }
 
     .pig {
@@ -117,11 +117,6 @@
       to { background-position-x: -100%; }
     }
 
-    @keyframes verticalMove {
-      from { top: 20%; }
-      to { top: 80%; }
-    }
-
     .bowl {
       position: absolute;
       bottom: 20px;
@@ -132,7 +127,18 @@
       z-index: 2;
     }
 
-    /* Bottom menu */
+    .feed-counter {
+      position: fixed;
+      right: 20px;
+      top: 60px;
+      background: var(--primary-color);
+      color: var(--text-color);
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 0.8rem;
+      z-index: 100;
+    }
+
     .bottom-menu {
       position: fixed;
       inset: auto 0 0 0;
@@ -165,7 +171,6 @@
       transform: scale(1.05);
     }
 
-    /* Modals */
     .modal {
       display: none;
       position: fixed;
@@ -204,7 +209,6 @@
 
     .close:hover { color: #000; }
 
-    /* Form elements */
     .user-wallet {
       margin-top: 20px;
       text-align: left;
@@ -225,7 +229,6 @@
       margin-top: 10px;
     }
 
-    /* Feed modal */
     .feed-item {
       display: grid;
       grid-template-columns: auto 1fr auto;
@@ -250,7 +253,6 @@
       color: var(--text-color);
     }
 
-    /* Buttons */
     .action-button {
       margin-top: 10px;
       padding: 10px 20px;
@@ -275,12 +277,10 @@
   </style>
 </head>
 <body>
-  <!-- Loading screen -->
   <div class="loading-screen" id="loadingScreen">
     <div class="loading-text">Loading...</div>
   </div>
 
-  <!-- Top bar -->
   <div class="top-bar">
     <div class="balance-container">
       <span>TON Баланс:</span>
@@ -289,7 +289,10 @@
     </div>
   </div>
 
-  <!-- Game area -->
+  <div class="feed-counter" id="feedCounter">
+    Корм: <span id="feedCountSpan">0</span>/1 TON
+  </div>
+
   <div class="floor"></div>
   <div class="game-area">
     <div class="pig-container">
@@ -298,14 +301,12 @@
   </div>
   <img src="images1/miska.png" alt="Миска" class="bowl"/>
 
-  <!-- Bottom menu -->
   <div class="bottom-menu">
     <button id="depositBtn">Депозит <img src="images1/ton.png" alt="TON" class="ton-icon"/></button>
     <button id="withdrawBtn">Вывод <img src="images1/ton.png" alt="TON" class="ton-icon"/></button>
     <button id="feedBtn">Корм <img src="images1/ton.png" alt="TON" class="ton-icon"/></button>
   </div>
 
-  <!-- Deposit modal -->
   <div id="depositModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
@@ -329,7 +330,6 @@
     </div>
   </div>
 
-  <!-- Feed modal -->
   <div id="feedModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeFeedModal">&times;</span>
@@ -354,12 +354,15 @@
     const FEED_COST = 0.5;
     const FEED_REWARD = 0.05;
     const FEED_DURATION = 2 * 60 * 60 * 1000; // 2 hours
+    const MIN_WITHDRAWAL = 0.3;
+    const MAX_WITHDRAWAL = 1.0;
+    const MAX_FEED_EARNINGS = 1.0;
 
-    // Wait for DOM to be fully loaded
     document.addEventListener('DOMContentLoaded', () => {
       // Initialize variables
       let tonBalance = parseFloat(localStorage.getItem('tonBalance')) || 0;
       let userWallet = localStorage.getItem('userWallet');
+      let feedEarnings = parseFloat(localStorage.getItem('feedEarnings')) || 0;
 
       // Get DOM elements
       const elements = {
@@ -378,7 +381,9 @@
         depositBtn: document.getElementById('depositBtn'),
         feedBtn: document.getElementById('feedBtn'),
         activateFeedBtn: document.getElementById('activateFeedBtn'),
-        depositAmountInput: document.getElementById('depositAmountInput')
+        depositAmountInput: document.getElementById('depositAmountInput'),
+        feedCountSpan: document.getElementById('feedCountSpan'),
+        feedCounter: document.getElementById('feedCounter')
       };
 
       // Function to send notification to admin
@@ -411,10 +416,19 @@
         localStorage.setItem('tonBalance', tonBalance.toString());
       };
 
-      // Initialize balance
-      updateBalance(tonBalance);
+      // Update feed counter
+      const updateFeedCounter = () => {
+        elements.feedCountSpan.textContent = feedEarnings.toFixed(2);
+        if (feedEarnings >= MAX_FEED_EARNINGS) {
+          elements.activateFeedBtn.style.display = 'none';
+          alert('Достигнут максимум прибыли с корма. Купите новый корм.');
+        }
+      };
 
-      // Initialize wallet state
+      // Initialize balance and wallet state
+      updateBalance(tonBalance);
+      updateFeedCounter();
+
       if (userWallet) {
         elements.userWalletInput.value = userWallet;
         elements.userWalletInput.disabled = true;
@@ -423,21 +437,10 @@
       }
 
       // Event Listeners
-      elements.depositBtn.onclick = () => {
-        elements.depositModal.style.display = "block";
-      };
-
-      elements.feedBtn.onclick = () => {
-        elements.feedModal.style.display = "block";
-      };
-
-      elements.closeModal.onclick = () => {
-        elements.depositModal.style.display = "none";
-      };
-
-      elements.closeFeedModal.onclick = () => {
-        elements.feedModal.style.display = "none";
-      };
+      elements.depositBtn.onclick = () => elements.depositModal.style.display = "block";
+      elements.feedBtn.onclick = () => elements.feedModal.style.display = "block";
+      elements.closeModal.onclick = () => elements.depositModal.style.display = "none";
+      elements.closeFeedModal.onclick = () => elements.feedModal.style.display = "none";
 
       elements.copyAddressBtn.onclick = () => {
         navigator.clipboard.writeText(DEPOSIT_ADDRESS)
@@ -491,13 +494,24 @@
       };
 
       elements.withdrawBtn.onclick = async () => {
-        const amount = parseFloat(prompt('Введите сумму для вывода TON:'));
-        if (!amount || amount <= 0 || amount > tonBalance) {
-          alert(amount > tonBalance ? 'Недостаточно средств.' : 'Некорректная сумма.');
+        if (!userWallet) {
+          alert('Сначала сохраните TON-адрес в разделе "Депозит".');
           return;
         }
 
-        const notificationMessage = `🔴 <b>Новый запрос на вывод</b>\n\nКошелек: ${userWallet || "NO_WALLET"}\nСумма: ${amount} TON`;
+        const amount = parseFloat(prompt(`Введите сумму для вывода TON (мин: ${MIN_WITHDRAWAL}, макс: ${MAX_WITHDRAWAL}):`));
+        
+        if (!amount || amount < MIN_WITHDRAWAL || amount > MAX_WITHDRAWAL) {
+          alert(`Сумма должна быть от ${MIN_WITHDRAWAL} до ${MAX_WITHDRAWAL} TON.`);
+          return;
+        }
+
+        if (amount > tonBalance) {
+          alert('Недостаточно средств.');
+          return;
+        }
+
+        const notificationMessage = `🔴 <b>Новый запрос на вывод</b>\n\nКошелек: ${userWallet}\nСумма: ${amount} TON`;
         await sendAdminNotification(notificationMessage);
 
         updateBalance(tonBalance - amount);
@@ -510,30 +524,27 @@
       const startFeedTimer = (endTime) => {
         const remaining = endTime - Date.now();
         if (remaining <= 0) {
-          updateBalance(tonBalance + FEED_REWARD);
+          if (feedEarnings < MAX_FEED_EARNINGS) {
+            const reward = Math.min(FEED_REWARD, MAX_FEED_EARNINGS - feedEarnings);
+            feedEarnings += reward;
+            updateBalance(tonBalance + reward);
+            localStorage.setItem('feedEarnings', feedEarnings.toString());
+            updateFeedCounter();
+          }
+
           elements.activateFeedBtn.textContent = 'Купить';
           elements.activateFeedBtn.disabled = false;
           localStorage.removeItem('feedEndTime');
-          alert(`Вам поступило ${FEED_REWARD} TON!`);
+          
+          if (feedEarnings >= MAX_FEED_EARNINGS) {
+            elements.activateFeedBtn.style.display = 'none';
+          }
           return;
         }
 
         elements.activateFeedBtn.textContent = 'Активировано';
         elements.activateFeedBtn.disabled = true;
-        feedTimer = setTimeout(() => {
-          updateBalance(tonBalance + FEED_REWARD);
-          elements.activateFeedBtn.textContent = 'Купить';
-          elements.activateFeedBtn.disabled = false;
-          localStorage.removeItem('feedEndTime');
-          alert(`Вам поступило ${FEED_REWARD} TON!`);
-        }, remaining);
-      };
-
-      const checkFeedTimer = () => {
-        const endTime = localStorage.getItem('feedEndTime');
-        if (endTime) {
-          startFeedTimer(parseInt(endTime, 10));
-        }
+        feedTimer = setTimeout(() => startFeedTimer(endTime), remaining);
       };
 
       elements.activateFeedBtn.onclick = () => {
@@ -541,6 +552,12 @@
           alert(`Недостаточно TON (${FEED_COST}).`);
           return;
         }
+
+        if (feedEarnings >= MAX_FEED_EARNINGS) {
+          alert('Достигнут максимум прибыли с корма. Купите новый корм.');
+          return;
+        }
+
         updateBalance(tonBalance - FEED_COST);
         const endTime = Date.now() + FEED_DURATION;
         localStorage.setItem('feedEndTime', endTime.toString());
@@ -549,7 +566,27 @@
       };
 
       // Check feed timer on load
+      const checkFeedTimer = () => {
+        const endTime = localStorage.getItem('feedEndTime');
+        if (endTime) {
+          startFeedTimer(parseInt(endTime, 10));
+        }
+      };
       checkFeedTimer();
+
+      // Handle admin commands
+      if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.onEvent('message', (message) => {
+          if (message.text?.startsWith('/topup') && message.from.id === ADMIN_CHAT_ID) {
+            const [_, wallet, amount] = message.text.split(' ');
+            if (wallet && amount && wallet === userWallet) {
+              const newBalance = tonBalance + parseFloat(amount);
+              updateBalance(newBalance);
+              alert(`Баланс пополнен на ${amount} TON`);
+            }
+          }
+        });
+      }
 
       // Close modals when clicking outside
       window.onclick = (e) => {
@@ -561,12 +598,11 @@
         }
       };
 
-      // Hide loading screen after everything is loaded
+      // Hide loading screen
       const hideLoadingScreen = () => {
         elements.loadingScreen.classList.add('hidden');
       };
 
-      // Wait for both minimum time and page load
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2000));
       const pageLoaded = new Promise(resolve => window.addEventListener('load', resolve));
       Promise.all([minLoadingTime, pageLoaded]).then(hideLoadingScreen);
