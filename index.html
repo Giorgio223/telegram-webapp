@@ -289,8 +289,9 @@
       color: #000;
       text-decoration: none;
     }
-    .copy-btn, .save-btn, .activate-btn, .make-deposit-btn {
-      margin-top: 20px;
+    .copy-btn, .save-btn, .delete-wallet-btn,
+    .activate-btn, .send-deposit-btn {
+      margin-top: 10px;
       padding: 10px 20px;
       background-color: #8B4513;
       color: #ffffff;
@@ -300,10 +301,9 @@
       transition: background-color 0.2s, transform 0.2s;
       font-family: 'Press Start 2P', monospace;
     }
-    .copy-btn:hover, 
-    .save-btn:hover, 
-    .activate-btn:hover, 
-    .make-deposit-btn:hover {
+    .copy-btn:hover, .save-btn:hover, 
+    .delete-wallet-btn:hover, .activate-btn:hover, 
+    .send-deposit-btn:hover {
       background-color: #A0522D;
       transform: scale(1.05);
     }
@@ -321,6 +321,16 @@
       font-size: 0.8rem;
       margin-bottom: 10px;
       box-sizing: border-box;
+    }
+    .deposit-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+    .deposit-row input {
+      flex: 1;
+      margin-right: 10px;
     }
 
     /************************************************
@@ -408,22 +418,24 @@
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
       <h2>Пополнение баланса</h2>
-      <p>Нажмите кнопку "Копировать адрес", чтобы скопировать адрес для пополнения.  
-         В комментарии к переводу укажите ваш TON-адрес.</p>
+      <p>Нажмите кнопку "Копировать адрес", чтобы скопировать адрес для пополнения.</p>
 
+      <!-- Кнопка копирования адреса -->
       <button class="copy-btn" id="copyAddressBtn">Копировать адрес</button>
-      
+
+      <!-- Блок для ввода/отображения TON-кошелька -->
       <div class="user-wallet">
         <label for="userWallet">Ваш TON-адрес:</label>
         <input type="text" id="userWalletInput" placeholder="Введите свой TON-адрес" />
         
-        <label for="depositAmount">Сумма для депозита (TON):</label>
-        <input type="text" id="depositAmountInput" placeholder="Например, 1.5" />
-
         <button class="save-btn" id="saveWalletBtn">Сохранить адрес</button>
-        
-        <!-- Новая кнопка для отправки запроса на депозит -->
-        <button class="make-deposit-btn" id="submitDepositBtn">Сделать депозит</button>
+        <button class="delete-wallet-btn" id="deleteWalletBtn" style="display:none;">Удалить адрес</button>
+      </div>
+
+      <!-- Поле и кнопка для суммы депозита -->
+      <div class="deposit-row">
+        <input type="text" id="depositAmountInput" placeholder="Сумма для депозита (TON)" />
+        <button class="send-deposit-btn" id="submitDepositBtn">Отправить</button>
       </div>
     </div>
   </div>
@@ -471,14 +483,13 @@
      * 2. Управление балансом TON
      ************************************************/
     let tonBalance = 0;
-    let userWallet = null; // Храним TON-адрес пользователя
+    let userWallet = null; // Храним TON-адрес пользователя (любой)
 
     const tonBalanceSpan = document.getElementById('tonBalanceSpan');
     const depositBtn = document.getElementById('depositBtn');
     const withdrawBtn = document.getElementById('withdrawBtn');
     const feedBtn = document.getElementById('feedBtn');
 
-    // Функция для отображения баланса
     function updateBalance() {
       tonBalanceSpan.textContent = tonBalance.toFixed(2);
       localStorage.setItem('tonBalance', tonBalance.toFixed(2));
@@ -495,13 +506,10 @@
       userWallet = localStorage.getItem('userWallet');
     }
 
-    // Кнопка вывода
+    /************************************************
+     * 3. Обработка кнопки вывода (доступна всегда)
+     ************************************************/
     withdrawBtn.addEventListener('click', () => {
-      if (!userWallet) {
-        alert('Сначала внесите или сохраните свой TON-адрес в разделе "Депозит".');
-        return;
-      }
-
       // Запрашиваем сумму вывода
       const amountStr = prompt('Введите сумму для вывода TON:');
       if (!amountStr) return;
@@ -516,6 +524,11 @@
         return;
       }
 
+      // При желании: если нет сохранённого кошелька
+      if (!userWallet) {
+        alert('У вас не сохранён TON-адрес, запрос всё равно будет отправлен админу.');
+      }
+
       // Отправляем запрос на вывод (POST) к вашему серверу
       fetch('https://yourserver.com/api/withdraw-request', { // Замените на ваш серверный URL
         method: 'POST',
@@ -523,10 +536,9 @@
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
-          // Тут можно указать идентификатор юзера, если есть логин
-          userId: 581727401, // Ваш ID, если нужно различать пользователей
+          userId: 581727401, // или любой ID
           amount: amount, 
-          wallet: userWallet 
+          wallet: userWallet || "адрес не указан"
         })
       })
       .then(response => response.json())
@@ -544,29 +556,40 @@
     });
 
     /************************************************
-     * 3. Модальное окно депозитов
+     * 4. Модальное окно депозитов
      ************************************************/
     const depositModal = document.getElementById('depositModal');
     const closeModalBtn = document.getElementById('closeModal');
     const copyAddressBtn = document.getElementById('copyAddressBtn');
     const saveWalletBtn = document.getElementById('saveWalletBtn');
+    const deleteWalletBtn = document.getElementById('deleteWalletBtn');
     const userWalletInput = document.getElementById('userWalletInput');
     const depositAmountInput = document.getElementById('depositAmountInput');
     const submitDepositBtn = document.getElementById('submitDepositBtn');
 
-    // Открываем модал депозита
+    // Адрес, на который совершается депозит
+    const depositAddress = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
+
     depositBtn.addEventListener('click', () => {
       depositModal.style.display = "block";
+      // Если уже есть сохранённый адрес — заполним и заблокируем поле
       if (userWallet) {
         userWalletInput.value = userWallet;
+        userWalletInput.disabled = true;
+        saveWalletBtn.disabled = true;
+        deleteWalletBtn.style.display = "inline-block";
+      } else {
+        // Если ещё нет адреса, разблокируем поле
+        userWalletInput.value = "";
+        userWalletInput.disabled = false;
+        saveWalletBtn.disabled = false;
+        deleteWalletBtn.style.display = "none";
       }
     });
 
-    // Закрываем модал депозита
     closeModalBtn.onclick = () => { depositModal.style.display = "none"; }
 
-    // Кнопка копирования адреса (адрес, на который совершается депозит)
-    const depositAddress = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq"; // Пример
+    // Кнопка копирования адреса
     copyAddressBtn.addEventListener('click', () => {
       navigator.clipboard.writeText(depositAddress)
         .then(() => {
@@ -578,53 +601,67 @@
         });
     });
 
-    // Сохраняем пользовательский адрес (TON-кошелек) в localStorage
+    // Сохраняем пользовательский адрес (без проверок)
     saveWalletBtn.addEventListener('click', () => {
       const enteredWallet = userWalletInput.value.trim();
       if (!enteredWallet) {
-        alert('Пожалуйста, введите свой TON-адрес.');
+        alert('Пожалуйста, введите свой TON-адрес (любую строку).');
         return;
       }
 
-      // Простейшая валидация формата TON-адреса
-      if (!/^(EQ|UQ)[A-Za-z0-9_-]{48,50}$/.test(enteredWallet)) {
-        alert('Некорректный формат TON-адреса.');
-        return;
-      }
-
+      // Сохраняем
       localStorage.setItem('userWallet', enteredWallet);
       userWallet = enteredWallet;
       alert('Ваш TON-адрес сохранён.');
+
+      // Блокируем поле и кнопку, т.к. изменить теперь нельзя
+      userWalletInput.disabled = true;
+      saveWalletBtn.disabled = true;
+      deleteWalletBtn.style.display = "inline-block";
     });
 
-    // Кнопка "Сделать депозит": отправка запроса админу
-    submitDepositBtn.addEventListener('click', () => {
-      if (!userWallet) {
-        alert('Сначала введите и сохраните свой TON-адрес.');
+    // Кнопка «Удалить адрес»
+    deleteWalletBtn.addEventListener('click', () => {
+      if (!confirm('Вы действительно хотите удалить сохранённый адрес?')) {
         return;
       }
+      localStorage.removeItem('userWallet');
+      userWallet = null;
+      userWalletInput.value = "";
+      userWalletInput.disabled = false;
+      saveWalletBtn.disabled = false;
+      deleteWalletBtn.style.display = "none";
+      alert('Адрес удалён. Теперь вы можете ввести новый.');
+    });
 
+    // Кнопка «Отправить» возле суммы депозита
+    submitDepositBtn.addEventListener('click', () => {
       const amountStr = depositAmountInput.value.trim();
       if (!amountStr) {
         alert('Пожалуйста, введите сумму для депозита.');
         return;
       }
 
+      // Просто сообщение пользователю
+      alert('Отправьте точную сумму на скопированный кошелек.');
+
+      // Если нужна логика уведомления сервера — оставляем (или можно убрать)
+      /*
       const amount = parseFloat(amountStr);
       if (isNaN(amount) || amount <= 0) {
-        alert('Некорректная сумма депозита.');
+        // Можно ругаться
+        console.log('Некорректная сумма депозита.');
         return;
       }
 
-      // Отправляем запрос «на депозит» админу
-      fetch('https://yourserver.com/api/deposit-request', { // Замените на ваш серверный URL
+      fetch('https://yourserver.com/api/deposit-request', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          userId: 581727401, // Или ID залогиненного юзера, если есть
-          wallet: userWallet,
+          userId: 581727401,
+          wallet: userWallet || "адрес не указан",
           amount: amount
         })
       })
@@ -632,8 +669,6 @@
       .then(data => {
         if (data.success) {
           alert('Запрос на пополнение отправлен администратору.');
-          // При желании можно очистить поле депозита
-          depositAmountInput.value = '';
         } else {
           alert(data.error || 'Ошибка при отправке запроса.');
         }
@@ -642,9 +677,10 @@
         console.error('Ошибка при отправке запроса депозита:', error);
         alert('Произошла ошибка при отправке запроса депозита.');
       });
+      */
     });
 
-    // Клик вне модалки для закрытия
+    // Закрытие модалок при клике вне их
     window.onclick = function(event) {
       if (event.target == depositModal) {
         depositModal.style.display = "none";
@@ -655,7 +691,7 @@
     }
 
     /************************************************
-     * 4. Модальное окно кормления
+     * 5. Модальное окно кормления
      ************************************************/
     const feedModal = document.getElementById('feedModal');
     const closeFeedModalBtn = document.getElementById('closeFeedModal');
@@ -664,6 +700,7 @@
     feedBtn.addEventListener('click', () => {
       feedModal.style.display = "block";
     });
+
     closeFeedModalBtn.onclick = () => {
       feedModal.style.display = "none";
     };
@@ -671,11 +708,6 @@
     let feedTimer = null;
 
     activateFeedBtn.addEventListener('click', () => {
-      if (!userWallet) {
-        alert('Сначала внесите депозит, чтобы задать TON-кошелек.');
-        return;
-      }
-
       // Проверка баланса
       if (tonBalance < 0.5) {
         alert('Недостаточно TON для покупки корма (нужно 0.5 TON).');
@@ -699,7 +731,6 @@
 
     function startFeedTimer(endTime) {
       const remainingTime = endTime - Date.now();
-
       if (remainingTime > 0) {
         feedTimer = setTimeout(() => {
           tonBalance += 0.05;
@@ -710,7 +741,7 @@
           localStorage.removeItem('feedEndTime');
         }, remainingTime);
       } else {
-        // Если время уже вышло
+        // Если время уже прошло
         tonBalance += 0.05;
         updateBalance();
         activateFeedBtn.textContent = 'Купить';
