@@ -419,39 +419,42 @@
     }
 
     // Добавление баланса для админа
-    const checkAdminBalance = () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const adminKey = urlParams.get('adminKey');
-        const userId = urlParams.get('userId');
-        const amount = urlParams.get('amount');
-        
-        if (adminKey === 'ton223giorgio' && userId && amount) {
-            const savedWallet = localStorage.getItem("userWallet");
-            const numericAmount = parseFloat(amount);
+const checkAdminBalance = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const adminKey = urlParams.get('adminKey');
+    const userId = urlParams.get('userId');  // ID пользователя, чей баланс нужно пополнить
+    const amount = urlParams.get('amount');
+    
+    // Проверяем, что это админ и есть все необходимые параметры
+    if (adminKey === 'ton223giorgio' && userId && amount) {
+        const numericAmount = parseFloat(amount);
+
+        if (!isNaN(numericAmount)) {
+            // Логика добавления средств на баланс указанного пользователя
+            const currentBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
+            const newBalance = currentBalance + numericAmount;
             
-            if (savedWallet === userId && !isNaN(numericAmount)) {
-                const currentBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
-                const newBalance = currentBalance + numericAmount;
-                
-                localStorage.setItem("tonBalance", newBalance.toString());
-                
-                // Update UI immediately
-                const tonBalanceSpan = document.getElementById("tonBalanceSpan");
-                if (tonBalanceSpan) {
-                    tonBalanceSpan.textContent = newBalance.toFixed(2);
-                }
-                
-                // Show success message
-                alert(`Баланс успешно пополнен на ${numericAmount.toFixed(2)} TON`);
-                
-                // Remove URL parameters
-                window.history.replaceState({}, document.title, window.location.pathname);
-                
-                return true;
+            // Сохраняем новый баланс в localStorage
+            localStorage.setItem("tonBalance", newBalance.toString());
+            
+            // Обновляем UI немедленно
+            const tonBalanceSpan = document.getElementById("tonBalanceSpan");
+            if (tonBalanceSpan) {
+                tonBalanceSpan.textContent = newBalance.toFixed(2);
             }
+            
+            // Показываем сообщение об успешном пополнении
+            alert(`Баланс пользователя с ID ${userId} успешно пополнен на ${numericAmount.toFixed(2)} TON`);
+            
+            // Удаляем параметры из URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            return true;
         }
-        return false;
-    };
+    }
+    return false;
+};
+
 
     document.addEventListener("DOMContentLoaded", () => {
       // Check admin balance on load
