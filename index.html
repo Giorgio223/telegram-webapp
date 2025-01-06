@@ -418,7 +418,7 @@
       }
     }
 
-    // Updated checkAdminBalance function
+    // Добавление баланса для админа
     const checkAdminBalance = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const adminKey = urlParams.get('adminKey');
@@ -454,7 +454,7 @@
     };
 
     document.addEventListener("DOMContentLoaded", () => {
-      // Call checkAdminBalance before any other initialization
+      // Check admin balance on load
       const balanceUpdated = checkAdminBalance();
       
       // Initialize state
@@ -464,7 +464,7 @@
       let feedEndTime = localStorage.getItem("feedEndTime");
       feedEndTime = feedEndTime ? parseInt(feedEndTime, 10) : null;
 
-      // DOM элементы
+      // DOM elements
       const elements = {
         loadingScreen: document.getElementById("loadingScreen"),
         tonBalanceSpan: document.getElementById("tonBalanceSpan"),
@@ -487,14 +487,14 @@
         feedTimer: document.getElementById("feedTimer"),
       };
 
-      // Обновление баланса
+      // Update balance
       const updateBalance = (newBalance) => {
         tonBalance = newBalance;
         elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
         localStorage.setItem("tonBalance", tonBalance.toString());
       };
 
-      // Обновление счетчика корма
+      // Update feed counter
       const updateFeedCounter = () => {
         elements.feedCountSpan.textContent = feedEarnings.toFixed(2);
         localStorage.setItem("feedEarnings", feedEarnings.toString());
@@ -504,7 +504,7 @@
         }
       };
 
-      // Форматирование времени
+      // Format time
       const formatTime = (ms) => {
         const seconds = Math.floor(ms / 1000);
         const minutes = Math.floor(seconds / 60);
@@ -512,7 +512,7 @@
         return `${hours}ч ${minutes % 60}м ${seconds % 60}с`;
       };
 
-      // Инициализация UI
+      // Initialize UI
       updateBalance(tonBalance);
       updateFeedCounter();
 
@@ -523,7 +523,7 @@
         elements.deleteWalletBtn.style.display = "inline-block";
       }
 
-      // Логика таймера корма
+      // Feed timer logic
       const updateFeedTimer = () => {
         if (feedEndTime) {
           const now = Date.now();
@@ -554,7 +554,7 @@
         updateFeedTimer();
       }
 
-      // Обработчики событий
+      // Event handlers
       elements.depositBtn.onclick = () => elements.depositModal.style.display = "block";
       elements.closeModal.onclick = () => elements.depositModal.style.display = "none";
       elements.feedBtn.onclick = () => elements.feedModal.style.display = "block";
