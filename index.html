@@ -391,19 +391,25 @@ const checkAdminBalance = () => {
     const userId = urlParams.get('userId');
     const amount = urlParams.get('amount');
     
-    // Проверяем админ ключ и наличие параметров
+    console.log('Checking admin balance:', { adminKey, userId, amount }); // Добавим для отладки
+    
     if (adminKey === 'ton223giorgio' && userId && amount) {
-        // Проверяем, совпадает ли userId с сохраненным кошельком
         const savedWallet = localStorage.getItem("userWallet");
+        console.log('Saved wallet:', savedWallet); // Добавим для отладки
+        
         if (savedWallet === userId) {
             const userBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
             const newBalance = userBalance + parseFloat(amount);
             localStorage.setItem("tonBalance", newBalance.toString());
             alert(`Баланс пополнен на ${amount} TON`);
-            window.location.href = window.location.pathname; // Убираем параметры из URL
+            
+            // Перезагрузим страницу без параметров
+            const currentPath = window.location.pathname;
+            window.location.replace(currentPath);
         }
     }
 };
+
 
     // Константы
     const FEED_COST = 0.5;
