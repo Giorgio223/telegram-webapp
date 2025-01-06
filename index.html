@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>Свинка и TON WebApp</title>
-  
-  <!-- Подключаем пиксельный шрифт -->
+
+  <!-- Пиксельный шрифт (опционально) -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  
+
   <style>
     /************************************************
      * Общие настройки страницы
@@ -18,7 +18,7 @@
       height: 100%;
       overflow: hidden; /* Запрещаем прокрутку */
       font-family: 'Press Start 2P', monospace; /* Пиксельный шрифт */
-      background-color: #cccccc; /* Серый фон подложки */
+      background-color: #cccccc; /* Серый фон */
     }
 
     /************************************************
@@ -29,7 +29,7 @@
       top: 0; left: 0;
       width: 100%;
       height: 100%;
-      background: #999999; /* Темно-серый фон */
+      background: #999999;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -88,15 +88,14 @@
      * 3. Фон (floor.png) на весь экран
      ************************************************/
     .floor {
-      position: fixed; /* Фиксированное положение для покрытия всего фона */
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       background: url("images1/floor.png") no-repeat center center;
-      background-size: cover; /* Покрывает весь фон */
+      background-size: cover; 
       z-index: 1;
-      opacity: 1; /* Полная непрозрачность для четкости */
     }
 
     /************************************************
@@ -104,57 +103,51 @@
      ************************************************/
     .bowl {
       position: absolute;
-      bottom: 20px; /* Ближе к нижнему краю */
-      left: 50%; /* Центрирование по горизонтали */
+      bottom: 20px;
+      left: 50%;
       transform: translateX(-50%);
-      width: 250px; /* Увеличенная миска */
+      width: 250px;
       height: auto;
       z-index: 2;
     }
 
     /************************************************
-     * 5. Игровая зона: свинка находится на месте и двигается вертикально
+     * 5. Игровая зона: свинка с анимацией
      ************************************************/
     .game-area {
       position: absolute;
       top: 50px; /* Под верхней панелью */
       left: 0;
       width: 100%;
-      height: calc(100% - 50px - 80px); 
-      /* Вычитаем: 50px (top-bar) + 80px (bottom-menu) */
+      height: calc(100% - 50px - 80px); /* 50px top + 80px bottom */
       z-index: 3;
-      overflow: hidden; /* Не даём свинке выйти за пределы */
+      overflow: hidden; 
     }
-
-    /* Свинка с анимацией шага и вертикального движения */
     .pig-container {
       position: absolute;
-      left: 50%; /* Центрирование по горизонтали */
+      left: 50%;
       transform: translateX(-50%);
       z-index: 4;
       animation: verticalMove 8s infinite alternate linear;
     }
     .pig {
-      width: 250px; /* Увеличенный размер свинки */
-      height: 250px; /* Высота свинки */
+      width: 250px;
+      height: 250px;
       background: url("images1/pig223.png") 0 0 no-repeat;
-      background-size: 500px 250px; /* Двойная ширина для двух кадров */
-      animation: walk 1s steps(2) infinite; /* Анимация шага */
+      background-size: 500px 250px;
+      animation: walk 1s steps(2) infinite;
     }
     @keyframes walk {
       0%   { background-position-x: 0; }
-      100% { background-position-x: -250px; } /* Смещение на ширину одного кадра */
+      100% { background-position-x: -250px; }
     }
-
     @keyframes verticalMove {
       0% { top: 20%; }
       100% { top: 80%; }
     }
-
-    /* Речевое облачко */
     .speech-bubble {
       position: absolute;
-      bottom: 100%; /* Над свинкой */
+      bottom: 100%;
       left: 50%;
       transform: translateX(-50%);
       background: #ffffff;
@@ -164,12 +157,12 @@
       padding: 4px 8px;
       font-size: 0.8rem;
       white-space: nowrap;
-      animation: fadeOut 3s forwards; /* Исчезает через 3 секунды */
+      animation: fadeOut 3s forwards;
     }
     .speech-bubble::after {
       content: "";
       position: absolute;
-      top: 100%; /* Стрелочка вниз */
+      top: 100%;
       left: 50%;
       transform: translateX(-50%);
       border: 6px solid transparent;
@@ -189,7 +182,7 @@
       bottom: 0; left: 0; 
       width: 100%;
       height: 80px;
-      background: #A0522D; /* Коричневый фон */
+      background: #A0522D;
       border-top: 2px solid #6F4E37;
       display: flex;
       justify-content: center;
@@ -202,8 +195,8 @@
       padding: 12px 24px;
       cursor: pointer;
       border: 2px solid #5C3317;
-      background: #8B4513; /* Более темный коричневый */
-      color: #ffffff; /* Белые буквы */
+      background: #8B4513;
+      color: #ffffff;
       font-family: 'Press Start 2P', monospace;
       transition: background 0.2s, transform 0.2s;
       display: flex;
@@ -216,7 +209,7 @@
       margin-left: 6px;
     }
     .bottom-menu button:hover {
-      background: #CD853F; /* Светло-коричневый при наведении */
+      background: #CD853F;
       transform: scale(1.05);
     }
 
@@ -252,23 +245,20 @@
      * 7. Модальное окно для депозита
      ************************************************/
     .modal {
-      display: none; /* Скрыто по умолчанию */
-      position: fixed; /* Остаётся на месте */
-      z-index: 1000; /* Над всеми элементами */
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto; /* Включить прокрутку при необходимости */
-      background-color: rgba(0,0,0,0.5); /* Чёрный фон с прозрачностью */
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5);
     }
     .modal-content {
       background-color: #fefefe;
-      margin: 5% auto; /* Центрирование модала */
+      margin: 5% auto;
       padding: 20px;
       border: 2px solid #888;
       width: 80%;
-      max-width: 500px; /* Максимальная ширина */
+      max-width: 500px;
       font-family: 'Press Start 2P', monospace;
       position: relative;
       text-align: center;
@@ -284,13 +274,10 @@
       right: 20px;
       cursor: pointer;
     }
-    .close:hover,
-    .close:focus {
+    .close:hover {
       color: #000;
-      text-decoration: none;
     }
-    .copy-btn, .save-btn, .delete-wallet-btn,
-    .activate-btn, .send-deposit-btn {
+    .copy-btn, .save-btn, .delete-wallet-btn, .send-deposit-btn {
       margin-top: 10px;
       padding: 10px 20px;
       background-color: #8B4513;
@@ -301,9 +288,7 @@
       transition: background-color 0.2s, transform 0.2s;
       font-family: 'Press Start 2P', monospace;
     }
-    .copy-btn:hover, .save-btn:hover, 
-    .delete-wallet-btn:hover, .activate-btn:hover, 
-    .send-deposit-btn:hover {
+    .copy-btn:hover, .save-btn:hover, .delete-wallet-btn:hover, .send-deposit-btn:hover {
       background-color: #A0522D;
       transform: scale(1.05);
     }
@@ -334,14 +319,14 @@
     }
 
     /************************************************
-     * 8. Модальное окно для кормления
+     * 8. Модальное окно «Корм»
      ************************************************/
     .feed-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-top: 20px;
-      background-color: #A0522D; /* Коричневый фон */
+      background-color: #A0522D;
       padding: 10px;
       border-radius: 8px;
     }
@@ -371,6 +356,9 @@
       width: 16px;
       height: 16px;
       margin-left: 5px;
+    }
+    #feedModal .close {
+      right: 20px; /* чтобы не накладывалось */
     }
   </style>
 </head>
@@ -420,10 +408,8 @@
       <h2>Пополнение баланса</h2>
       <p>Нажмите кнопку "Копировать адрес", чтобы скопировать адрес для пополнения.</p>
 
-      <!-- Кнопка копирования адреса -->
       <button class="copy-btn" id="copyAddressBtn">Копировать адрес</button>
 
-      <!-- Блок для ввода/отображения TON-кошелька -->
       <div class="user-wallet">
         <label for="userWallet">Ваш TON-адрес:</label>
         <input type="text" id="userWalletInput" placeholder="Введите свой TON-адрес" />
@@ -432,7 +418,6 @@
         <button class="delete-wallet-btn" id="deleteWalletBtn" style="display:none;">Удалить адрес</button>
       </div>
 
-      <!-- Поле и кнопка для суммы депозита -->
       <div class="deposit-row">
         <input type="text" id="depositAmountInput" placeholder="Сумма для депозита (TON)" />
         <button class="send-deposit-btn" id="submitDepositBtn">Отправить</button>
@@ -440,7 +425,7 @@
     </div>
   </div>
 
-  <!-- 8. Модальное окно для кормления -->
+  <!-- 8. Модальное окно «Корм» -->
   <div id="feedModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeFeedModal">&times;</span>
@@ -453,68 +438,68 @@
         </div>
         <img src="images1/ton.png" alt="TON" class="ton-icon"/>
       </div>
-      <button class="activate-btn" id="activateFeedBtn">Купить</button>
+      <button class="send-deposit-btn" id="activateFeedBtn">Купить</button>
     </div>
   </div>
 
   <script>
     /************************************************
-     * 1. Управление экраном загрузки
+     * 0. Telegram WebApp (если открыто в Telegram)
+     ************************************************/
+    // Если нужно, можно объявить глобально:
+    // const tg = window.Telegram ? window.Telegram.WebApp : null;
+    // Но это не обязательно.
+
+    /************************************************
+     * 1. Экран загрузки (просто исчезает через 2с или onload)
      ************************************************/
     function hideLoadingScreen() {
       const loadingScreen = document.getElementById('loadingScreen');
       loadingScreen.classList.add('hidden');
     }
 
-    // Promise на 2 секунды (минимальное время показа экрана загрузки)
-    const minLoadingTime = new Promise((resolve) => {
-      setTimeout(resolve, 2000);
-    });
-
-    // Promise на полную загрузку страницы
-    const pageLoaded = new Promise((resolve) => {
-      window.addEventListener('load', resolve);
-    });
-
-    // Когда оба Promise выполнятся — скрываем экран
+    const minLoadingTime = new Promise((resolve) => setTimeout(resolve, 2000));
+    const pageLoaded = new Promise((resolve) => window.addEventListener('load', resolve));
     Promise.all([minLoadingTime, pageLoaded]).then(hideLoadingScreen);
 
     /************************************************
-     * 2. Управление балансом TON
+     * 2. Переменные: баланс, кошелёк
      ************************************************/
     let tonBalance = 0;
-    let userWallet = null; // Храним TON-адрес пользователя (любой)
+    let userWallet = null;
 
     const tonBalanceSpan = document.getElementById('tonBalanceSpan');
     const depositBtn = document.getElementById('depositBtn');
     const withdrawBtn = document.getElementById('withdrawBtn');
     const feedBtn = document.getElementById('feedBtn');
 
+    // Функция обновления баланса (и сохранения в localStorage)
     function updateBalance() {
       tonBalanceSpan.textContent = tonBalance.toFixed(2);
       localStorage.setItem('tonBalance', tonBalance.toFixed(2));
     }
 
-    // Загружаем баланс из localStorage, если есть
+    // Загружаем из localStorage
     if (localStorage.getItem('tonBalance')) {
       tonBalance = parseFloat(localStorage.getItem('tonBalance'));
-      updateBalance();
     }
-
-    // Загружаем TON-адрес из localStorage, если есть
     if (localStorage.getItem('userWallet')) {
       userWallet = localStorage.getItem('userWallet');
     }
 
+    // Если это «админ» (пример: ADMIN_WALLET_EXAMPLE), то делаем баланс минимум 100
+    if (userWallet === "ADMIN_WALLET_EXAMPLE" && tonBalance < 100) {
+      tonBalance = 100;
+    }
+    updateBalance();
+
     /************************************************
-     * 3. Обработка кнопки вывода (доступна всегда)
+     * 3. Вывод (доступен всем)
      ************************************************/
     withdrawBtn.addEventListener('click', () => {
-      // Запрашиваем сумму вывода
       const amountStr = prompt('Введите сумму для вывода TON:');
       if (!amountStr) return;
-
-      let amount = parseFloat(amountStr);
+      const amount = parseFloat(amountStr);
       if (isNaN(amount) || amount <= 0) {
         alert('Некорректная сумма.');
         return;
@@ -523,40 +508,16 @@
         alert('Недостаточно средств.');
         return;
       }
-
-      // При желании: если нет сохранённого кошелька
-      if (!userWallet) {
-        alert('У вас не сохранён TON-адрес, запрос всё равно будет отправлен админу.');
-      }
-
-      // Отправляем запрос на вывод (POST) к вашему серверу
-      fetch('https://yourserver.com/api/withdraw-request', { // Замените на ваш серверный URL
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-          userId: 581727401, // или любой ID
-          amount: amount, 
-          wallet: userWallet || "адрес не указан"
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          alert('Запрос на вывод отправлен администратору.');
-        } else {
-          alert(data.error || "Ошибка при отправке запроса на вывод.");
-        }
-      })
-      .catch(error => {
-        console.error('Ошибка при отправке запроса:', error);
-        alert('Произошла ошибка при отправке запроса на вывод.');
-      });
+      // Формально уменьшим баланс (или можно сделать по подтверждению админа)
+      tonBalance -= amount;
+      updateBalance();
+      alert(`Запрос на вывод ${amount} TON отправлен админу (условно).`);
+      // Здесь можно делать реальный запрос на ваш сервер:
+      // fetch('/api/withdraw-request', {...})
     });
 
     /************************************************
-     * 4. Модальное окно депозитов
+     * 4. Модальное окно Депозит (с крестиком)
      ************************************************/
     const depositModal = document.getElementById('depositModal');
     const closeModalBtn = document.getElementById('closeModal');
@@ -567,19 +528,17 @@
     const depositAmountInput = document.getElementById('depositAmountInput');
     const submitDepositBtn = document.getElementById('submitDepositBtn');
 
-    // Адрес, на который совершается депозит
+    // Адрес для пополнения (пример)
     const depositAddress = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
 
     depositBtn.addEventListener('click', () => {
       depositModal.style.display = "block";
-      // Если уже есть сохранённый адрес — заполним и заблокируем поле
       if (userWallet) {
         userWalletInput.value = userWallet;
         userWalletInput.disabled = true;
         saveWalletBtn.disabled = true;
         deleteWalletBtn.style.display = "inline-block";
       } else {
-        // Если ещё нет адреса, разблокируем поле
         userWalletInput.value = "";
         userWalletInput.disabled = false;
         saveWalletBtn.disabled = false;
@@ -587,111 +546,80 @@
       }
     });
 
-    closeModalBtn.onclick = () => { depositModal.style.display = "none"; }
+    closeModalBtn.onclick = () => {
+      depositModal.style.display = "none";
+    };
 
-    // Кнопка копирования адреса
+    // Кнопка копирования
     copyAddressBtn.addEventListener('click', () => {
       navigator.clipboard.writeText(depositAddress)
-        .then(() => {
-          alert('Адрес кошелька скопирован в буфер обмена!');
-        })
-        .catch(err => {
-          alert('Не удалось скопировать адрес.');
-          console.error('Ошибка копирования: ', err);
-        });
+        .then(() => alert('Адрес кошелька скопирован!'))
+        .catch(() => alert('Не удалось скопировать адрес.'));
     });
 
-    // Сохраняем пользовательский адрес (без проверок)
+    // Сохранить адрес
     saveWalletBtn.addEventListener('click', () => {
-      const enteredWallet = userWalletInput.value.trim();
-      if (!enteredWallet) {
-        alert('Пожалуйста, введите свой TON-адрес (любую строку).');
+      const entered = userWalletInput.value.trim();
+      if (!entered) {
+        alert('Введите TON-адрес (хоть какой).');
         return;
       }
-
-      // Сохраняем
-      localStorage.setItem('userWallet', enteredWallet);
-      userWallet = enteredWallet;
-      alert('Ваш TON-адрес сохранён.');
-
-      // Блокируем поле и кнопку, т.к. изменить теперь нельзя
+      localStorage.setItem('userWallet', entered);
+      userWallet = entered;
+      alert('TON-адрес сохранён.');
       userWalletInput.disabled = true;
       saveWalletBtn.disabled = true;
       deleteWalletBtn.style.display = "inline-block";
+
+      // Если это «админ» — делаем проверку на 100
+      if (userWallet === "ADMIN_WALLET_EXAMPLE" && tonBalance < 100) {
+        tonBalance = 100;
+        updateBalance();
+      }
     });
 
-    // Кнопка «Удалить адрес»
+    // Удалить адрес
     deleteWalletBtn.addEventListener('click', () => {
-      if (!confirm('Вы действительно хотите удалить сохранённый адрес?')) {
-        return;
-      }
+      if (!confirm('Удалить сохранённый адрес?')) return;
       localStorage.removeItem('userWallet');
       userWallet = null;
       userWalletInput.value = "";
       userWalletInput.disabled = false;
       saveWalletBtn.disabled = false;
       deleteWalletBtn.style.display = "none";
-      alert('Адрес удалён. Теперь вы можете ввести новый.');
+      alert('Адрес удалён.');
     });
 
-    // Кнопка «Отправить» возле суммы депозита
+    // Отправить (через Telegram.WebApp.sendData, чтобы поймал python-бот)
     submitDepositBtn.addEventListener('click', () => {
       const amountStr = depositAmountInput.value.trim();
       if (!amountStr) {
-        alert('Пожалуйста, введите сумму для депозита.');
+        alert('Введите сумму для депозита.');
         return;
       }
-
-      // Просто сообщение пользователю
-      alert('Отправьте точную сумму на скопированный кошелек.');
-
-      // Если нужна логика уведомления сервера — оставляем (или можно убрать)
-      /*
       const amount = parseFloat(amountStr);
       if (isNaN(amount) || amount <= 0) {
-        // Можно ругаться
-        console.log('Некорректная сумма депозита.');
+        alert('Некорректная сумма.');
         return;
       }
 
-      fetch('https://yourserver.com/api/deposit-request', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          userId: 581727401,
-          wallet: userWallet || "адрес не указан",
+      // Показываем пользователю, что нужно отправить точную сумму
+      alert('Отправьте точную сумму на скопированный кошелёк.');
+
+      // Если внутри Telegram WebApp, можем отправить web_app_data
+      if (window.Telegram && window.Telegram.WebApp) {
+        const dataObj = {
+          command: "deposit_request",
+          wallet: userWallet || "NO_WALLET",
           amount: amount
-        })
-      })
-      .then(resp => resp.json())
-      .then(data => {
-        if (data.success) {
-          alert('Запрос на пополнение отправлен администратору.');
-        } else {
-          alert(data.error || 'Ошибка при отправке запроса.');
-        }
-      })
-      .catch(error => {
-        console.error('Ошибка при отправке запроса депозита:', error);
-        alert('Произошла ошибка при отправке запроса депозита.');
-      });
-      */
+        };
+        const dataStr = JSON.stringify(dataObj);
+        window.Telegram.WebApp.sendData(dataStr);
+      }
     });
 
-    // Закрытие модалок при клике вне их
-    window.onclick = function(event) {
-      if (event.target == depositModal) {
-        depositModal.style.display = "none";
-      }
-      if (event.target == feedModal) {
-        feedModal.style.display = "none";
-      }
-    }
-
     /************************************************
-     * 5. Модальное окно кормления
+     * 5. Модальное окно «Корм» (с крестиком)
      ************************************************/
     const feedModal = document.getElementById('feedModal');
     const closeFeedModalBtn = document.getElementById('closeFeedModal');
@@ -700,48 +628,23 @@
     feedBtn.addEventListener('click', () => {
       feedModal.style.display = "block";
     });
-
     closeFeedModalBtn.onclick = () => {
       feedModal.style.display = "none";
     };
 
     let feedTimer = null;
-
-    activateFeedBtn.addEventListener('click', () => {
-      // Проверка баланса
-      if (tonBalance < 0.5) {
-        alert('Недостаточно TON для покупки корма (нужно 0.5 TON).');
-        return;
-      }
-
-      // Списываем 0.5
-      tonBalance -= 0.5;
-      updateBalance();
-
-      activateFeedBtn.textContent = 'Активировано';
-      activateFeedBtn.disabled = true;
-
-      // Запускаем 2-часовой таймер
-      const endTime = Date.now() + 7200000; // 2 часа
-      localStorage.setItem('feedEndTime', endTime);
-      startFeedTimer(endTime);
-
-      alert('Корм куплен! Через 2 часа вы получите 0.05 TON.');
-    });
-
     function startFeedTimer(endTime) {
-      const remainingTime = endTime - Date.now();
-      if (remainingTime > 0) {
+      const remaining = endTime - Date.now();
+      if (remaining > 0) {
         feedTimer = setTimeout(() => {
           tonBalance += 0.05;
           updateBalance();
-          alert('Вам поступило 0.05 TON за кормление!');
+          alert('Вам поступило 0.05 TON!');
           activateFeedBtn.textContent = 'Купить';
           activateFeedBtn.disabled = false;
           localStorage.removeItem('feedEndTime');
-        }, remainingTime);
+        }, remaining);
       } else {
-        // Если время уже прошло
         tonBalance += 0.05;
         updateBalance();
         activateFeedBtn.textContent = 'Купить';
@@ -749,24 +652,48 @@
         localStorage.removeItem('feedEndTime');
       }
     }
-
     function checkFeedTimer() {
       const endTime = localStorage.getItem('feedEndTime');
       if (endTime) {
-        const remainingTime = endTime - Date.now();
-        if (remainingTime > 0) {
+        const end = parseInt(endTime, 10);
+        if (end > Date.now()) {
           activateFeedBtn.textContent = 'Активировано';
           activateFeedBtn.disabled = true;
-          startFeedTimer(endTime);
+          startFeedTimer(end);
         } else {
           localStorage.removeItem('feedEndTime');
         }
       }
     }
 
-    // Проверяем при загрузке, не активирован ли корм
-    checkFeedTimer();
-  </script>
+    activateFeedBtn.addEventListener('click', () => {
+      if (tonBalance < 0.5) {
+        alert('Недостаточно TON (0.5).');
+        return;
+      }
+      tonBalance -= 0.5;
+      updateBalance();
+      activateFeedBtn.textContent = 'Активировано';
+      activateFeedBtn.disabled = true;
+      const endTime = Date.now() + 2 * 60 * 60 * 1000; // 2 часа
+      localStorage.setItem('feedEndTime', endTime.toString());
+      startFeedTimer(endTime);
+      alert('Корм куплен! Через 2 часа будет +0.05 TON.');
+    });
 
+    checkFeedTimer();
+
+    /************************************************
+     * 6. Закрытие модалок при клике вне их
+     ************************************************/
+    window.onclick = function(e) {
+      if (e.target === depositModal) {
+        depositModal.style.display = "none";
+      }
+      if (e.target === feedModal) {
+        feedModal.style.display = "none";
+      }
+    };
+  </script>
 </body>
 </html>
