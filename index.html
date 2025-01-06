@@ -384,6 +384,20 @@
   </div>
 
   <script>
+    // В начале скрипта добавьте:
+const checkAdminBalance = (userId, amount) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const adminKey = urlParams.get('adminKey');
+    
+    // Проверяем админ ключ
+    if (adminKey === 'ton223giorgio') {
+        const userBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
+        const newBalance = userBalance + parseFloat(amount);
+        localStorage.setItem("tonBalance", newBalance.toString());
+        alert(`Баланс пополнен на ${amount} TON`);
+        window.location.reload();
+    }
+};
     // Константы
     const FEED_COST = 0.5;
     const FEED_REWARD = 0.05;
@@ -425,6 +439,7 @@
       let feedEarnings = parseFloat(localStorage.getItem("feedEarnings")) || 0;
       let feedEndTime = localStorage.getItem("feedEndTime");
       feedEndTime = feedEndTime ? parseInt(feedEndTime, 10) : null;
+      checkAdminBalance();
 
       // DOM элементы
       const elements = {
