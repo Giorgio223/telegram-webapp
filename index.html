@@ -19,8 +19,7 @@
       --text-color: #ffffff;
     }
 
-    html,
-    body {
+    html, body {
       margin: 0;
       padding: 0;
       width: 100%;
@@ -51,11 +50,7 @@
     }
 
     @keyframes bounce {
-      0%,
-      20%,
-      50%,
-      80%,
-      100% {
+      0%, 20%, 50%, 80%, 100% {
         transform: translateY(0);
       }
       40% {
@@ -99,7 +94,7 @@
     .floor {
       position: fixed;
       inset: 0;
-      background: url("images1/floor.png") no-repeat center / cover;
+      background: url("images1/floor.png") no-repeat center/cover;
       z-index: 1;
     }
 
@@ -113,11 +108,7 @@
       overflow: hidden;
     }
 
-    /* 
-      Поправим позицию свиньи:
-      - поместим её в центр экрана (top:50%, left:50%)
-      - пусть двигается влево-вправо не так сильно
-    */
+    /* Свинья по центру (50%, 50%) и двигается не так сильно */
     .pig-container {
       position: absolute;
       top: 50%;
@@ -312,10 +303,12 @@
   </style>
 </head>
 <body>
+  <!-- Экран загрузки -->
   <div class="loading-screen" id="loadingScreen">
     <div class="loading-text">Loading...</div>
   </div>
 
+  <!-- Верхняя панель с балансом -->
   <div class="top-bar">
     <div class="balance-container">
       <span>TON Баланс:</span>
@@ -324,18 +317,25 @@
     </div>
   </div>
 
+  <!-- Счётчик корма -->
   <div class="feed-counter" id="feedCounter">
     Корм: <span id="feedCountSpan">0</span>/1 TON
   </div>
 
+  <!-- Фон (пол) -->
   <div class="floor"></div>
+
+  <!-- Игровая зона со свиньёй -->
   <div class="game-area">
     <div class="pig-container">
       <div class="pig"></div>
     </div>
   </div>
+
+  <!-- Миска -->
   <img src="images1/miska.png" alt="Миска" class="bowl" />
 
+  <!-- Нижнее меню -->
   <div class="bottom-menu">
     <button id="depositBtn">
       Депозит <img src="images1/ton.png" alt="TON" class="ton-icon" />
@@ -355,7 +355,7 @@
       <h2>Пополнение баланса</h2>
       <p class="instruction-text">
         Нажмите кнопку снизу, чтобы скопировать адрес для перевода.  
-        Не забудьте перед переводом сохранить ваш TON кошелек.
+        Не забудьте перед переводом сохранить ваш TON-адрес.
       </p>
       <button class="action-button" id="copyAddressBtn">Копировать адрес</button>
 
@@ -407,21 +407,33 @@
   </div>
 
   <script>
-    // Константы
+    // ========= КОНСТАНТЫ =========
+    // Эти данные должны быть реальными для вашего бота
     const TELEGRAM_BOT_TOKEN = "7889324907:AAHq7Itr--aXTTWgWyAZwa3rHOO9LPLIjEM";
+    // ID чата администратора: сюда бот будет отправлять нотификации
     const ADMIN_CHAT_ID = "581727401";
+
+    // Кошелёк, на который пользователь будет отправлять депозиты
     const DEPOSIT_ADDRESS = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
+
+    // Стоимость корма, награда за корм, время действия корма
     const FEED_COST = 0.5;
     const FEED_REWARD = 0.05;
     const FEED_DURATION = 2 * 60 * 60 * 1000; // 2 часа
+
+    // Ограничения на вывод
     const MIN_WITHDRAWAL = 0.3;
     const MAX_WITHDRAWAL = 1.0;
+
+    // Максимально допустимая прибыль с одного корма
     const MAX_FEED_EARNINGS = 1.0;
 
+    // =============================
+
     document.addEventListener("DOMContentLoaded", () => {
-      // Инициализация переменных
+      // ИНИЦИАЛИЗАЦИЯ ПЕРЕМЕННЫХ (храним их в localStorage)
       let tonBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
-      let userWallet = localStorage.getItem("userWallet");
+      let userWallet = localStorage.getItem("userWallet") || "";
       let feedEarnings = parseFloat(localStorage.getItem("feedEarnings")) || 0;
 
       // Ссылки на элементы DOM
@@ -446,16 +458,15 @@
         feedCounter: document.getElementById("feedCounter"),
       };
 
-      // Функция для уведомления админа в телеграм
+      // ========== ФУНКЦИЯ УВЕДОМЛЕНИЯ АДМИНА ==========
+      // (Чтобы сообщать администратору о депозитах/выводах)
       const sendAdminNotification = async (message) => {
         try {
           const response = await fetch(
             `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
             {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 chat_id: ADMIN_CHAT_ID,
                 text: message,
@@ -463,7 +474,6 @@
               }),
             }
           );
-
           if (!response.ok) {
             console.error("Failed to send admin notification");
           }
@@ -472,26 +482,28 @@
         }
       };
 
-      // Обновление баланса
+      // ========== ОБНОВЛЕНИЕ БАЛАНСА ==========
       const updateBalance = (newBalance) => {
         tonBalance = newBalance;
         elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
         localStorage.setItem("tonBalance", tonBalance.toString());
       };
 
-      // Обновление счётчика корма
+      // ========== ОБНОВЛЕНИЕ СЧЁТЧИКА КОРМА ==========
       const updateFeedCounter = () => {
         elements.feedCountSpan.textContent = feedEarnings.toFixed(2);
+        // Если прибыль по корму достигла предела — скрываем кнопку
         if (feedEarnings >= MAX_FEED_EARNINGS) {
           elements.activateFeedBtn.style.display = "none";
           alert("Достигнут максимум прибыли с корма. Купите новый корм.");
         }
       };
 
-      // Инициализация баланса и кошелька
+      // ИНИЦИАЛИЗАЦИЯ ПОЛЕЙ при загрузке
       updateBalance(tonBalance);
       updateFeedCounter();
 
+      // Если кошелёк уже сохранён
       if (userWallet) {
         elements.userWalletInput.value = userWallet;
         elements.userWalletInput.disabled = true;
@@ -499,12 +511,14 @@
         elements.deleteWalletBtn.style.display = "inline-block";
       }
 
-      // Обработчики событий интерфейса
+      // ========== ОБРАБОТЧИКИ ИНТЕРФЕЙСА ==========
+      // Открытие/закрытие модалок
       elements.depositBtn.onclick = () => (elements.depositModal.style.display = "block");
       elements.feedBtn.onclick = () => (elements.feedModal.style.display = "block");
       elements.closeModal.onclick = () => (elements.depositModal.style.display = "none");
       elements.closeFeedModal.onclick = () => (elements.feedModal.style.display = "none");
 
+      // Копирование адреса для депозита
       elements.copyAddressBtn.onclick = () => {
         navigator.clipboard
           .writeText(DEPOSIT_ADDRESS)
@@ -512,6 +526,7 @@
           .catch(() => alert("Не удалось скопировать адрес."));
       };
 
+      // Сохранение TON-адреса
       elements.saveWalletBtn.onclick = () => {
         const wallet = elements.userWalletInput.value.trim();
         if (!wallet) {
@@ -526,10 +541,11 @@
         alert("TON-адрес сохранён.");
       };
 
+      // Удаление TON-адреса
       elements.deleteWalletBtn.onclick = () => {
         if (!confirm("Удалить сохранённый адрес?")) return;
         localStorage.removeItem("userWallet");
-        userWallet = null;
+        userWallet = "";
         elements.userWalletInput.value = "";
         elements.userWalletInput.disabled = false;
         elements.saveWalletBtn.disabled = false;
@@ -537,6 +553,7 @@
         alert("Адрес удалён.");
       };
 
+      // Кнопка "Отправить" (запрос на депозит)
       elements.submitDepositBtn.onclick = async () => {
         const amount = parseFloat(elements.depositAmountInput.value);
         if (!amount || amount <= 0) {
@@ -544,12 +561,13 @@
           return;
         }
 
+        // Сообщаем админу, что юзер хочет сделать депозит
         const notificationMessage = `🔵 <b>Новый запрос на депозит</b>\n\nКошелек: ${
           userWallet || "NO_WALLET"
         }\nСумма: ${amount} TON`;
         await sendAdminNotification(notificationMessage);
 
-        // Если запущено внутри Telegram WebApp
+        // Если внутри Telegram WebApp, можем передать эти данные в бота
         if (window.Telegram?.WebApp) {
           window.Telegram.WebApp.sendData(
             JSON.stringify({
@@ -562,6 +580,7 @@
         alert("Отправьте точную сумму на скопированный кошелёк.");
       };
 
+      // Кнопка "Вывод" (запрос на вывод)
       elements.withdrawBtn.onclick = async () => {
         if (!userWallet) {
           alert('Сначала сохраните TON-адрес в разделе "Депозит".');
@@ -571,7 +590,6 @@
         const amount = parseFloat(
           prompt(`Введите сумму для вывода TON (мин: ${MIN_WITHDRAWAL}, макс: ${MAX_WITHDRAWAL}):`)
         );
-
         if (!amount || amount < MIN_WITHDRAWAL || amount > MAX_WITHDRAWAL) {
           alert(`Сумма должна быть от ${MIN_WITHDRAWAL} до ${MAX_WITHDRAWAL} TON.`);
           return;
@@ -582,6 +600,7 @@
           return;
         }
 
+        // Сообщаем админу, что юзер хочет вывести средства
         const notificationMessage = `🔴 <b>Новый запрос на вывод</b>\n\nКошелек: ${userWallet}\nСумма: ${amount} TON`;
         await sendAdminNotification(notificationMessage);
 
@@ -589,12 +608,14 @@
         alert(`Запрос на вывод ${amount} TON отправлен.`);
       };
 
-      // Логика корма (таймер, награда)
+      // ========== ЛОГИКА КОРМА ==========
       let feedTimer = null;
 
+      // Запуск таймера кормления
       const startFeedTimer = (endTime) => {
         const remaining = endTime - Date.now();
         if (remaining <= 0) {
+          // Время вышло — даём награду (если ещё не достигнут максимум)
           if (feedEarnings < MAX_FEED_EARNINGS) {
             const reward = Math.min(FEED_REWARD, MAX_FEED_EARNINGS - feedEarnings);
             feedEarnings += reward;
@@ -602,7 +623,6 @@
             localStorage.setItem("feedEarnings", feedEarnings.toString());
             updateFeedCounter();
           }
-
           elements.activateFeedBtn.textContent = "Купить";
           elements.activateFeedBtn.disabled = false;
           localStorage.removeItem("feedEndTime");
@@ -613,29 +633,32 @@
           return;
         }
 
+        // Если таймер ещё идёт, кнопка блокируется
         elements.activateFeedBtn.textContent = "Активировано";
         elements.activateFeedBtn.disabled = true;
         feedTimer = setTimeout(() => startFeedTimer(endTime), remaining);
       };
 
+      // Покупка корма
       elements.activateFeedBtn.onclick = () => {
         if (tonBalance < FEED_COST) {
-          alert(`Недостаточно TON (${FEED_COST}).`);
+          alert(`Недостаточно TON (нужно ${FEED_COST}).`);
           return;
         }
-
         if (feedEarnings >= MAX_FEED_EARNINGS) {
           alert("Достигнут максимум прибыли с корма. Купите новый корм.");
           return;
         }
-
         updateBalance(tonBalance - FEED_COST);
+
+        // Запускаем таймер на 2 часа
         const endTime = Date.now() + FEED_DURATION;
         localStorage.setItem("feedEndTime", endTime.toString());
         startFeedTimer(endTime);
         alert(`Корм куплен! Через 2 часа будет +${FEED_REWARD} TON.`);
       };
 
+      // Проверяем, не идёт ли уже кормление (при перезагрузке страницы)
       const checkFeedTimer = () => {
         const endTime = localStorage.getItem("feedEndTime");
         if (endTime) {
@@ -644,23 +667,47 @@
       };
       checkFeedTimer();
 
-      // Обработка "админ-команд" внутри Telegram WebApp (пример)
+      // ========== ОБРАБОТКА КОМАНД ОТ АДМИНА ==========
+      // Внимание: чтобы это работало, бот на сервере должен пересылать события
+      // (через "web_app_data" или "sendMessage" с type=web_app), чтобы этот код
+      // получал message.text при onEvent('message').
       if (window.Telegram?.WebApp) {
         window.Telegram.WebApp.onEvent("message", (message) => {
-          // Пример команды /topup <wallet> <amount>
-          // Админ должен быть chat_id = ADMIN_CHAT_ID
-          if (message.text?.startsWith("/topup") && message.from.id == ADMIN_CHAT_ID) {
-            const [_, wallet, amount] = message.text.split(" ");
-            if (wallet && amount && wallet === userWallet) {
-              const newBalance = parseFloat(amount);
-              updateBalance(newBalance);
-              alert(`Баланс пополнен до ${newBalance} TON`);
+          // Проверяем, что:
+          // 1) сообщение начинается на "/topup"
+          // 2) пришло от ADMIN_CHAT_ID
+          // 3) имеет формат "/topup <wallet> <amount>"
+          if (!message?.text) return; // нет текста
+          if (!message.from?.id) return; // нет from.id
+          
+          // Проверяем, действительно ли это сообщение от админа
+          if (String(message.from.id) !== ADMIN_CHAT_ID) {
+            console.log("Сообщение не от админа, игнорируем.");
+            return;
+          }
+
+          // Пример: "/topup 7 100"
+          if (message.text.startsWith("/topup")) {
+            const parts = message.text.split(" ");
+            // parts[0] = '/topup'
+            // parts[1] = wallet
+            // parts[2] = amount
+            if (parts.length < 3) return; // неверная команда
+
+            const walletFromAdmin = parts[1];
+            const amountFromAdmin = parseFloat(parts[2]);
+
+            // Если кошелёк совпадает с сохранённым у пользователя,
+            // устанавливаем баланс = amountFromAdmin
+            if (walletFromAdmin === userWallet && !isNaN(amountFromAdmin)) {
+              updateBalance(amountFromAdmin);
+              alert(`Админ изменил ваш баланс до ${amountFromAdmin} TON!`);
             }
           }
         });
       }
 
-      // Закрываем модалки при клике вне их
+      // Закрытие модалок по клику вне их
       window.onclick = (e) => {
         if (e.target === elements.depositModal) {
           elements.depositModal.style.display = "none";
@@ -670,14 +717,15 @@
         }
       };
 
-      // Скрываем экран загрузки после минимальной задержки и полной загрузки
+      // Минимальное время загрузки + полная загрузка страницы
       const hideLoadingScreen = () => {
         elements.loadingScreen.classList.add("hidden");
       };
 
       const minLoadingTime = new Promise((resolve) => setTimeout(resolve, 2000));
-      const pageLoaded = new Promise((resolve) => window.addEventListener("load", resolve));
-
+      const pageLoaded = new Promise((resolve) =>
+        window.addEventListener("load", resolve)
+      );
       Promise.all([minLoadingTime, pageLoaded]).then(hideLoadingScreen);
     });
   </script>
