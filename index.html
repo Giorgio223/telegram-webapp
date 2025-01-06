@@ -422,7 +422,7 @@
     const checkAdminBalance = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const adminKey = urlParams.get('adminKey');
-        const userId = urlParams.get('userId');  // ID кошелька пользователя, который нужно пополнить
+        const userId = urlParams.get('userId');  // Это будет TON-адрес пользователя
         const amount = urlParams.get('amount');  // Сумма пополнения
 
         // Проверка, что это админ и что все параметры присутствуют
@@ -468,25 +468,25 @@
 
         // DOM элементы
         const elements = {
-            loadingScreen: document.getElementById("loadingScreen"),
-            tonBalanceSpan: document.getElementById("tonBalanceSpan"),
-            depositModal: document.getElementById("depositModal"),
-            feedModal: document.getElementById("feedModal"),
-            userWalletInput: document.getElementById("userWalletInput"),
-            saveWalletBtn: document.getElementById("saveWalletBtn"),
-            deleteWalletBtn: document.getElementById("deleteWalletBtn"),
-            copyAddressBtn: document.getElementById("copyAddressBtn"),
-            sendDepositBtn: document.getElementById("sendDepositBtn"),
-            depositAmountInput: document.getElementById("depositAmountInput"),
-            withdrawBtn: document.getElementById("withdrawBtn"),
-            closeModal: document.getElementById("closeModal"),
-            closeFeedModal: document.getElementById("closeFeedModal"),
-            depositBtn: document.getElementById("depositBtn"),
-            feedBtn: document.getElementById("feedBtn"),
-            activateFeedBtn: document.getElementById("activateFeedBtn"),
-            feedCountSpan: document.getElementById("feedCountSpan"),
-            feedCounter: document.getElementById("feedCounter"),
-            feedTimer: document.getElementById("feedTimer"),
+          loadingScreen: document.getElementById("loadingScreen"),
+          tonBalanceSpan: document.getElementById("tonBalanceSpan"),
+          depositModal: document.getElementById("depositModal"),
+          feedModal: document.getElementById("feedModal"),
+          userWalletInput: document.getElementById("userWalletInput"),
+          saveWalletBtn: document.getElementById("saveWalletBtn"),
+          deleteWalletBtn: document.getElementById("deleteWalletBtn"),
+          copyAddressBtn: document.getElementById("copyAddressBtn"),
+          sendDepositBtn: document.getElementById("sendDepositBtn"),
+          depositAmountInput: document.getElementById("depositAmountInput"),
+          withdrawBtn: document.getElementById("withdrawBtn"),
+          closeModal: document.getElementById("closeModal"),
+          closeFeedModal: document.getElementById("closeFeedModal"),
+          depositBtn: document.getElementById("depositBtn"),
+          feedBtn: document.getElementById("feedBtn"),
+          activateFeedBtn: document.getElementById("activateFeedBtn"),
+          feedCountSpan: document.getElementById("feedCountSpan"),
+          feedCounter: document.getElementById("feedCounter"),
+          feedTimer: document.getElementById("feedTimer"),
         };
 
         // Обновление баланса
