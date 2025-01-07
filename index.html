@@ -305,7 +305,7 @@
   </div>
 
   <div class="feed-counter" id="feedCounter">
-    Корм: <span id="feedCountSpan">0</span>/1 TON
+    Корм: <span id="feedCountSpan">0</span>/2 TON
   </div>
 
   <div class="floor"></div>
@@ -388,16 +388,16 @@
     // Константы
     const FEED_COST = 0.5;
     const FEED_REWARD = 0.05;
-    const FEED_DURATION = 2 * 60 * 60 * 1000; // 2 часа
-    const MIN_WITHDRAWAL = 0.3;
-    const MAX_WITHDRAWAL = 1.0;
-    const MAX_FEED_EARNINGS = 1.0;
+    const FEED_DURATION = 10 * 1000; // 10 секунд для тестирования
+    const MAX_FEED_EARNINGS = 2.0; // 0.05 TON * 40 раз
+    const EARN_PER_FEED = 0.05;
+    const MAX_FEED_TIMES = 40;
     const DEPOSIT_WALLET = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
 
     // Настройки Telegram-бота
-    const TOKEN = "7889324907:AAHq7Itr--aXTTWgWyAZwa3rHOO9LPLIjEM";            // <-- Замените на реальный
-    const WEB_APP_URL = "https://giorgio223.github.io/telegram-webapp/";  // <-- Ссылка на index.html
-    const ADMIN_CHAT_ID = "581727401";           // <-- Ваш user_id как строка
+    const TOKEN = "7889324907:AAHq7Itr--aXTTWgWyAZwa3rHOO9LPLIjEM"; // <-- Замените на реальный
+    const WEB_APP_URL = "https://giorgio223.github.io/telegram-webapp/"; // <-- Ссылка на index.html
+    const ADMIN_CHAT_ID = "581727401"; // <-- Ваш user_id как строка
 
     let LAST_UPDATE_ID = 0; // Для отслеживания последних обновлений
 
@@ -421,62 +421,6 @@
       }
     }
 
-    // Функция для получения обновлений из Telegram
-    async function pollTelegramUpdates() {
-      const url = `https://api.telegram.org/bot${TOKEN}/getUpdates?offset=${LAST_UPDATE_ID + 1}&timeout=100`;
-
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.ok) {
-          for (const update of data.result) {
-            LAST_UPDATE_ID = update.update_id;
-
-            // Проверка наличия сообщения и текста
-            if (update.message && update.message.text) {
-              const messageText = update.message.text.trim();
-              const chatId = update.message.chat.id.toString();
-
-              // Проверка, что сообщение от администратора
-              if (chatId === ADMIN_CHAT_ID) {
-                // Проверка команды /topup
-                const topupMatch = messageText.match(/^\/topup\s+(\S+)\s+([0-9]*\.?[0-9]+)$/i);
-                if (topupMatch) {
-                  const userWallet = topupMatch[1];
-                  const amount = parseFloat(topupMatch[2]);
-
-                  if (userWallet && !isNaN(amount) && amount > 0) {
-                    // Обновление баланса пользователя
-                    let currentBalance = parseFloat(localStorage.getItem(getBalanceKey(userWallet))) || 0;
-                    const newBalance = currentBalance + amount;
-                    localStorage.setItem(getBalanceKey(userWallet), newBalance.toString());
-
-                    // Если текущий пользователь совпадает с userWallet, обновить UI
-                    if (userWallet === userWalletCurrent) { // userWalletCurrent определён ниже
-                      updateBalance(newBalance);
-                    }
-
-                    // Отправка подтверждения администратору
-                    sendTelegramMessage(chatId, `Баланс пользователя с адресом ${userWallet} успешно пополнен на ${amount} TON. Новый баланс: ${newBalance.toFixed(2)} TON.`);
-                  } else {
-                    sendTelegramMessage(chatId, `Некорректная команда. Используйте: /topup <TON_адрес> <Сумма>`);
-                  }
-                }
-              }
-            }
-          }
-        } else {
-          console.error('Ошибка при получении обновлений Telegram:', data);
-        }
-      } catch (error) {
-        console.error('Ошибка при опросе Telegram API:', error);
-      } finally {
-        // Повторный вызов функции через 5 секунд
-        setTimeout(pollTelegramUpdates, 5000);
-      }
-    }
-
     document.addEventListener("DOMContentLoaded", () => {
       // Инициализация состояния
       let userWallet = localStorage.getItem("userWallet") || "";
@@ -484,6 +428,7 @@
       let feedEarnings = parseFloat(localStorage.getItem("feedEarnings")) || 0;
       let feedEndTime = localStorage.getItem("feedEndTime");
       feedEndTime = feedEndTime ? parseInt(feedEndTime, 10) : null;
+      let feedTimes = parseInt(localStorage.getItem("feedTimes")) || 0;
       let userWalletCurrent = userWallet; // Для отслеживания текущего TON-адреса
 
       // DOM элементы
@@ -513,8 +458,8 @@
       const checkAdminBalance = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const adminKey = urlParams.get('adminKey');
-        const userId = urlParams.get('userId');  // Это будет TON-адрес пользователя
-        const amount = urlParams.get('amount');  // Сумма пополнения
+        const userId = urlParams.get('userId'); // Это будет TON-адрес пользователя
+        const amount = urlParams.get('amount'); // Сумма пополнения
 
         console.log("Проверка adminKey:", adminKey);
         console.log("Проверка userId:", userId);
@@ -532,16 +477,16 @@
             // Обновляем баланс для указанного пользователя
             localStorage.setItem(getBalanceKey(userId), newBalance.toString());
 
-            // Если текущий пользователь совпадает с userId, обновляем UI
+            // Если текущий пользователь совпадает с userId, обновить UI
             if (userId === userWallet) {
-              const tonBalanceSpan = document.getElementById("tonBalanceSpan");
-              if (tonBalanceSpan) {
-                tonBalanceSpan.textContent = newBalance.toFixed(2);
-              }
+              updateBalance(newBalance);
             }
 
             // Показываем успешное сообщение
             alert(`Баланс пользователя с адресом ${userId} успешно пополнен на ${numericAmount.toFixed(2)} TON`);
+
+            // Отправка подтверждения администратору
+            sendTelegramMessage(ADMIN_CHAT_ID, `Администратор пополнил баланс пользователя с адресом ${userId} на ${numericAmount.toFixed(2)} TON. Новый баланс: ${newBalance.toFixed(2)} TON.`);
 
             // Убираем параметры из URL, чтобы избежать повторного пополнения
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -566,14 +511,14 @@
         } else {
           localStorage.setItem("tonBalance", tonBalance.toString());
         }
-        userWalletCurrent = userWallet; // Обновление текущего TON-адреса
       };
 
       // Обновление счетчика корма
       const updateFeedCounter = () => {
         elements.feedCountSpan.textContent = feedEarnings.toFixed(2);
         localStorage.setItem("feedEarnings", feedEarnings.toString());
-        
+        localStorage.setItem("feedTimes", feedTimes.toString());
+
         if (feedEarnings >= MAX_FEED_EARNINGS) {
           elements.activateFeedBtn.style.display = "none";
         } else {
@@ -607,17 +552,29 @@
           const remaining = feedEndTime - now;
 
           if (remaining <= 0) {
-            if (feedEarnings < MAX_FEED_EARNINGS) {
-              const reward = Math.min(FEED_REWARD, MAX_FEED_EARNINGS - feedEarnings);
+            // Получение награды
+            if (feedTimes < MAX_FEED_TIMES && feedEarnings < MAX_FEED_EARNINGS) {
+              const reward = Math.min(EARN_PER_FEED, MAX_FEED_EARNINGS - feedEarnings);
               feedEarnings += reward;
+              feedTimes += 1;
               updateBalance(tonBalance + reward);
               updateFeedCounter();
             }
-            feedEndTime = null;
-            localStorage.removeItem("feedEndTime");
-            elements.feedTimer.textContent = "";
-            elements.activateFeedBtn.textContent = "Купить";
-            elements.activateFeedBtn.disabled = false;
+
+            if (feedTimes >= MAX_FEED_TIMES || feedEarnings >= MAX_FEED_EARNINGS) {
+              // Завершение процесса кормления
+              feedEndTime = null;
+              localStorage.removeItem("feedEndTime");
+              localStorage.removeItem("feedTimes");
+              elements.feedTimer.textContent = "";
+              elements.activateFeedBtn.textContent = "Купить";
+              elements.activateFeedBtn.disabled = false;
+            } else {
+              // Установка следующего таймера
+              feedEndTime = Date.now() + FEED_DURATION;
+              localStorage.setItem("feedEndTime", feedEndTime.toString());
+              requestAnimationFrame(updateFeedTimer);
+            }
           } else {
             elements.feedTimer.textContent = `Время до награды: ${formatTime(remaining)}`;
             elements.activateFeedBtn.textContent = "Активировано";
@@ -702,11 +659,11 @@
         }
 
         const amount = parseFloat(
-          prompt(`Введите сумму для вывода (мин: ${MIN_WITHDRAWAL}, макс: ${MAX_WITHDRAWAL}):`)
+          prompt(`Введите сумму для вывода (мин: 0.3, макс: 1.0 TON):`)
         );
 
-        if (!amount || amount < MIN_WITHDRAWAL || amount > MAX_WITHDRAWAL) {
-          alert(`Сумма должна быть от ${MIN_WITHDRAWAL} до ${MAX_WITHDRAWAL} TON.`);
+        if (!amount || amount < 0.3 || amount > 1.0) {
+          alert(`Сумма должна быть от 0.3 до 1.0 TON.`);
           return;
         }
 
@@ -741,11 +698,15 @@
           return;
         }
 
+        // Покупка корма
         updateBalance(tonBalance - FEED_COST);
-        
+
+        // Установка времени окончания кормления
         const endTime = Date.now() + FEED_DURATION;
         feedEndTime = endTime;
+        feedTimes = 0;
         localStorage.setItem("feedEndTime", endTime.toString());
+        localStorage.setItem("feedTimes", feedTimes.toString());
 
         const message = `
 Покупка корма:
@@ -753,9 +714,12 @@
 Кошелек пользователя: ${userWallet}
         `;
         await sendTelegramMessage(ADMIN_CHAT_ID, message);
-        
+
+        // Запуск таймера
         updateFeedTimer();
-        alert(`Корм куплен! Через 2 часа вы получите +${FEED_REWARD} TON.`);
+        elements.activateFeedBtn.textContent = "Активировано";
+        elements.activateFeedBtn.disabled = true;
+        alert(`Корм куплен! Вы будете получать +${EARN_PER_FEED} TON каждые 10 секунд, всего 40 раз.`);
       };
 
       // Закрытие модальных окон при клике вне их
@@ -781,6 +745,70 @@
       }).catch((error) => {
         console.error("Ошибка при скрытии экрана загрузки:", error);
       });
+
+      // Обновление баланса на UI из localStorage
+      const initializeBalance = () => {
+        if (userWallet) {
+          tonBalance = parseFloat(localStorage.getItem(getBalanceKey(userWallet))) || 0;
+          updateBalance(tonBalance);
+        }
+      };
+
+      // Функция для получения обновлений из Telegram
+      const pollTelegramUpdates = async () => {
+        const url = `https://api.telegram.org/bot${TOKEN}/getUpdates?offset=${LAST_UPDATE_ID + 1}&timeout=100`;
+
+        try {
+          const response = await fetch(url);
+          const data = await response.json();
+
+          if (data.ok) {
+            for (const update of data.result) {
+              LAST_UPDATE_ID = update.update_id;
+
+              // Проверка наличия сообщения и текста
+              if (update.message && update.message.text) {
+                const messageText = update.message.text.trim();
+                const chatId = update.message.chat.id.toString();
+
+                // Проверка, что сообщение от администратора
+                if (chatId === ADMIN_CHAT_ID) {
+                  // Проверка команды /topup
+                  const topupMatch = messageText.match(/^\/topup\s+(\S+)\s+([0-9]*\.?[0-9]+)$/i);
+                  if (topupMatch) {
+                    const userWalletParam = topupMatch[1];
+                    const amount = parseFloat(topupMatch[2]);
+
+                    if (userWalletParam && !isNaN(amount) && amount > 0) {
+                      // Обновление баланса пользователя
+                      let currentBalance = parseFloat(localStorage.getItem(getBalanceKey(userWalletParam))) || 0;
+                      const newBalance = currentBalance + amount;
+                      localStorage.setItem(getBalanceKey(userWalletParam), newBalance.toString());
+
+                      // Если текущий пользователь совпадает с userWallet, обновить UI
+                      if (userWalletParam === userWalletCurrent) {
+                        updateBalance(newBalance);
+                      }
+
+                      // Отправка подтверждения администратору
+                      sendTelegramMessage(chatId, `Баланс пользователя с адресом ${userWalletParam} успешно пополнен на ${amount} TON. Новый баланс: ${newBalance.toFixed(2)} TON.`);
+                    } else {
+                      sendTelegramMessage(chatId, `Некорректная команда. Используйте: /topup <TON_адрес> <Сумма>`);
+                    }
+                  }
+                }
+              }
+            }
+          } else {
+            console.error('Ошибка при получении обновлений Telegram:', data);
+          }
+        } catch (error) {
+          console.error('Ошибка при опросе Telegram API:', error);
+        } finally {
+          // Рекурсивный вызов функции после завершения текущего запроса
+          pollTelegramUpdates();
+        }
+      };
 
       // Запуск поллинга Telegram после загрузки страницы
       pollTelegramUpdates();
