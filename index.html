@@ -6,6 +6,7 @@
   <title>Свинка и TON</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
   <style>
+    /* Ваши стили остаются без изменений */
     :root {
       --primary-color: #8B4513;
       --secondary-color: #A0522D;
@@ -334,7 +335,7 @@
       <span class="close" id="closeModal">&times;</span>
       <h2>Пополнение баланса</h2>
       <p class="instruction-text">
-        Нажмите кнопку ниже чтобы скопировать TON адрес для перевода, а также укажите желаемую сумму.
+        Нажмите кнопку ниже, чтобы скопировать TON адрес для перевода, а также укажите желаемую сумму.
         Не забудьте при необходимости сохранить ваш TON-адрес перед депозитом.
       </p>
 
@@ -421,51 +422,7 @@
       }
     }
 
-    // Добавление баланса для админа
-    const checkAdminBalance = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const adminKey = urlParams.get('adminKey');
-      const userId = urlParams.get('userId');  // Это будет TON-адрес пользователя
-      const amount = urlParams.get('amount');  // Сумма пополнения
-
-      // Проверка, что это админ и что все параметры присутствуют
-      if (adminKey === 'ton223giorgio' && userId && amount) {
-        const numericAmount = parseFloat(amount);
-
-        if (!isNaN(numericAmount)) {
-          // Получаем текущий баланс пользователя
-          let currentBalance = parseFloat(localStorage.getItem(getBalanceKey(userId))) || 0;
-          const newBalance = currentBalance + numericAmount;
-
-          // Обновляем баланс для указанного пользователя
-          localStorage.setItem(getBalanceKey(userId), newBalance.toString());
-
-          // Если текущ пользователь совпадает с userId, обновляем UI
-          if (userId === userWallet) {
-            const tonBalanceSpan = document.getElementById("tonBalanceSpan");
-            if (tonBalanceSpan) {
-              tonBalanceSpan.textContent = newBalance.toFixed(2);
-            }
-          }
-
-          // Показываем успешное сообщение
-          alert(`Баланс пользователя с адресом ${userId} успешно пополнен на ${numericAmount.toFixed(2)} TON`);
-
-          // Убираем параметры из URL, чтобы избежать повторного пополнения
-          window.history.replaceState({}, document.title, window.location.pathname);
-          return true;
-        } else {
-          alert("Некорректная сумма пополнения.");
-        }
-      }
-
-      return false;
-    };
-
     document.addEventListener("DOMContentLoaded", () => {
-      // Проверка на пополнение баланса при загрузке страницы
-      checkAdminBalance();
-
       // Инициализация состояния
       let userWallet = localStorage.getItem("userWallet") || "";
       let tonBalance = userWallet ? parseFloat(localStorage.getItem(getBalanceKey(userWallet))) || 0 : 0;
@@ -495,6 +452,54 @@
         feedCounter: document.getElementById("feedCounter"),
         feedTimer: document.getElementById("feedTimer"),
       };
+
+      // Функция проверки пополнения баланса
+      const checkAdminBalance = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const adminKey = urlParams.get('adminKey');
+        const userId = urlParams.get('userId');  // Это будет TON-адрес пользователя
+        const amount = urlParams.get('amount');  // Сумма пополнения
+
+        console.log("Проверка adminKey:", adminKey);
+        console.log("Проверка userId:", userId);
+        console.log("Проверка amount:", amount);
+
+        // Проверка, что это админ и что все параметры присутствуют
+        if (adminKey === 'ton223giorgio' && userId && amount) {
+          const numericAmount = parseFloat(amount);
+
+          if (!isNaN(numericAmount)) {
+            // Получаем текущий баланс пользователя
+            let currentBalance = parseFloat(localStorage.getItem(getBalanceKey(userId))) || 0;
+            const newBalance = currentBalance + numericAmount;
+
+            // Обновляем баланс для указанного пользователя
+            localStorage.setItem(getBalanceKey(userId), newBalance.toString());
+
+            // Если текущий пользователь совпадает с userId, обновляем UI
+            if (userId === userWallet) {
+              const tonBalanceSpan = document.getElementById("tonBalanceSpan");
+              if (tonBalanceSpan) {
+                tonBalanceSpan.textContent = newBalance.toFixed(2);
+              }
+            }
+
+            // Показываем успешное сообщение
+            alert(`Баланс пользователя с адресом ${userId} успешно пополнен на ${numericAmount.toFixed(2)} TON`);
+
+            // Убираем параметры из URL, чтобы избежать повторного пополнения
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return true;
+          } else {
+            alert("Некорректная сумма пополнения.");
+          }
+        }
+
+        return false;
+      };
+
+      // Проверка на пополнение баланса при загрузке страницы
+      checkAdminBalance();
 
       // Обновление баланса
       const updateBalance = (newBalance) => {
@@ -576,8 +581,9 @@
       elements.closeFeedModal.onclick = () => elements.feedModal.style.display = "none";
 
       elements.copyAddressBtn.onclick = () => {
-        navigator.clipboard.writeText(DEPOSIT_WALLET);
-        alert("Адрес для депозита скопирован!");
+        navigator.clipboard.writeText(DEPOSIT_WALLET)
+          .then(() => alert("Адрес для депозита скопирован!"))
+          .catch((err) => console.error('Ошибка копирования:', err));
       };
 
       elements.saveWalletBtn.onclick = () => {
@@ -708,11 +714,16 @@
       // Скрытие экрана загрузки
       const hideLoadingScreen = () => {
         elements.loadingScreen.classList.add("hidden");
+        console.log("Экран загрузки скрыт");
       };
 
       const minLoadingTime = new Promise((resolve) => setTimeout(resolve, 2000));
       const pageLoaded = new Promise((resolve) => window.addEventListener("load", resolve));
-      Promise.all([minLoadingTime, pageLoaded]).then(hideLoadingScreen);
+      Promise.all([minLoadingTime, pageLoaded]).then(() => {
+        hideLoadingScreen();
+      }).catch((error) => {
+        console.error("Ошибка при скрытии экрана загрузки:", error);
+      });
     });
   </script>
 </body>
