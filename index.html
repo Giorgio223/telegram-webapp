@@ -319,7 +319,7 @@
 
   <!-- Счётчик корма -->
   <div class="feed-counter" id="feedCounter">
-    Корм: <span id="feedCountSpan">0</span>/40
+    Заработано: <span id="feedCountSpan">0.00</span>/2 TON
   </div>
 
   <!-- Пол -->
@@ -468,7 +468,7 @@
       // Инициализация состояния
       let userWallet = localStorage.getItem("userWallet") || "";
       let tonBalance = parseFloat(localStorage.getItem(getBalanceKey(userId))) || 0;
-      let feedTimes = parseInt(localStorage.getItem("feedTimes")) || 0;
+      let feedTimes = parseFloat(localStorage.getItem("feedTimes")) || 0;
       let feedEndTime = localStorage.getItem("feedEndTime");
       feedEndTime = feedEndTime ? parseInt(feedEndTime, 10) : null;
 
@@ -550,14 +550,14 @@
         localStorage.setItem(getBalanceKey(userId), tonBalance.toString());
       };
 
-      // Обновление счетчика корма
+      // Обновление счётчика корма
       const updateFeedCounter = () => {
-        elements.feedCountSpan.textContent = feedTimes;
+        elements.feedCountSpan.textContent = tonBalance.toFixed(2);
         localStorage.setItem("feedTimes", feedTimes.toString());
 
-        if (feedTimes >= MAX_FEEDS) {
-          // Корм достиг максимума
-          elements.activateFeedBtn.textContent = "Максимум активировано";
+        if (tonBalance >= MAX_FEED_EARNINGS) {
+          // Достигнуто максимальное количество заработанных TON
+          elements.activateFeedBtn.textContent = "Максимум заработано";
           elements.activateFeedBtn.disabled = true;
         } else {
           elements.activateFeedBtn.textContent = "Активировать";
@@ -586,25 +586,24 @@
 
       // Логика таймера корма
       const startFeedTimer = () => {
-        if (feedTimes >= MAX_FEEDS) {
-          alert("Достигнут максимум активаций корма. Пожалуйста, купите новый корм.");
-          return;
-        }
-
         if (tonBalance < FEED_COST) {
           alert(`Недостаточно TON для покупки корма (нужно ${FEED_COST} TON).`);
           return;
         }
 
+        if (tonBalance + EARN_PER_FEED > MAX_FEED_EARNINGS) {
+          alert(`Вы достигли максимального заработка в ${MAX_FEED_EARNINGS} TON.`);
+          elements.activateFeedBtn.textContent = "Максимум заработано";
+          elements.activateFeedBtn.disabled = true;
+          return;
+        }
+
         // Покупка корма
         updateBalance(tonBalance - FEED_COST);
-        feedTimes += 1;
-        updateFeedCounter();
 
         // Установка времени окончания кормления
         feedEndTime = Date.now() + FEED_DELAY;
         localStorage.setItem("feedEndTime", feedEndTime.toString());
-        localStorage.setItem("feedTimes", feedTimes.toString());
 
         // Отправка сообщения администратору
         const message = `
@@ -618,10 +617,10 @@ ID пользователя: ${userId}
         // Запуск таймера
         elements.activateFeedBtn.textContent = "Активировано";
         elements.activateFeedBtn.disabled = true;
-        elements.feedTimer.textContent = `Ожидание награды: ${formatTime(feedEndTime - Date.now())}`;
+        elements.feedTimer.textContent = `Получение награды через: ${formatTime(feedEndTime - Date.now())}`;
         setTimeout(updateFeedTimer, 1000);
 
-        alert(`Корм куплен! Награда будет получена через 10 секунд.`);
+        alert(`Корм куплен! Через 10 секунд вы получите +${EARN_PER_FEED} TON.`);
       };
 
       const updateFeedTimer = () => {
@@ -629,6 +628,7 @@ ID пользователя: ${userId}
           elements.feedTimer.textContent = "";
           elements.activateFeedBtn.textContent = "Активировать";
           elements.activateFeedBtn.disabled = false;
+          updateFeedCounter();
           return;
         }
 
@@ -637,25 +637,13 @@ ID пользователя: ${userId}
 
         if (remaining <= 0) {
           // Получение награды
-          if (feedTimes < MAX_FEEDS && tonBalance + EARN_PER_FEED <= MAX_FEED_EARNINGS) {
-            const reward = EARN_PER_FEED;
-            updateBalance(tonBalance + reward);
-            elements.feedTimer.textContent = `Награда получена: +${reward.toFixed(2)} TON`;
-          }
-
-          // Очистка таймера
+          updateBalance(tonBalance + EARN_PER_FEED);
           feedEndTime = null;
           localStorage.removeItem("feedEndTime");
-          elements.feedTimer.textContent = "";
-          elements.activateFeedBtn.textContent = "Активировать";
-          elements.activateFeedBtn.disabled = false;
-
-          if (feedTimes >= MAX_FEEDS) {
-            elements.activateFeedBtn.textContent = "Максимум активировано";
-            elements.activateFeedBtn.disabled = true;
-          }
+          elements.feedTimer.textContent = `Награда получена: +${EARN_PER_FEED} TON`;
+          updateFeedCounter();
         } else {
-          elements.feedTimer.textContent = `Ожидание награды: ${formatTime(remaining)}`;
+          elements.feedTimer.textContent = `Получение награды через: ${formatTime(remaining)}`;
           setTimeout(updateFeedTimer, 1000);
         }
       };
