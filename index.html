@@ -6,7 +6,7 @@
   <title>Свинка и TON</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
   <style>
-    /* Основные стили */
+    /* Ваши стили остаются без изменений */
     :root {
       --primary-color: #8B4513;
       --secondary-color: #A0522D;
@@ -54,18 +54,15 @@
 
     .top-bar {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 60px;
+      inset: 0 0 auto 0;
+      height: 50px;
       background: #333333;
       color: var(--text-color);
       display: flex;
       align-items: center;
-      justify-content: flex-end; /* Выравнивание вправо */
+      justify-content: flex-end;
       padding: 0 20px;
       z-index: 100;
-      box-sizing: border-box;
     }
 
     .balance-container {
@@ -83,20 +80,17 @@
 
     .floor {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 100px;
+      inset: 0;
       background: url("images1/floor.png") no-repeat center/cover;
       z-index: 1;
     }
 
     .game-area {
       position: absolute;
-      top: 60px;
+      top: 50px;
       left: 0;
       width: 100%;
-      height: calc(100% - 160px);
+      height: calc(100% - 130px);
       z-index: 3;
       overflow: hidden;
     }
@@ -108,8 +102,6 @@
       z-index: 4;
       transform: translate(-50%, -50%);
       animation: horizontalMove 4s infinite alternate ease-in-out;
-      width: 250px; /* Фиксированная ширина для стабильности */
-      height: 250px; /* Фиксированная высота для стабильности */
     }
 
     @keyframes horizontalMove {
@@ -118,10 +110,10 @@
     }
 
     .pig {
-      width: 100%;
-      height: 100%;
-      background: url("images1/pig223.png") center center no-repeat;
-      background-size: contain; /* Полное отображение изображения */
+      width: clamp(150px, 40vw, 250px);
+      height: clamp(150px, 40vw, 250px);
+      background: url("images1/pig223.png") 0 0 no-repeat;
+      background-size: 200% 100%;
       animation: walk 1s steps(2) infinite;
     }
 
@@ -142,7 +134,7 @@
     .feed-counter {
       position: fixed;
       right: 20px;
-      top: 80px;
+      top: 60px;
       background: var(--primary-color);
       color: var(--text-color);
       padding: 10px;
@@ -153,9 +145,7 @@
 
     .bottom-menu {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      inset: auto 0 0 0;
       height: 80px;
       background: var(--secondary-color);
       border-top: 2px solid var(--border-color);
@@ -302,40 +292,32 @@
   </style>
 </head>
 <body>
-  <!-- Экран загрузки -->
   <div class="loading-screen" id="loadingScreen">
     <div class="loading-text">Загрузка...</div>
   </div>
 
-  <!-- Верхняя панель -->
   <div class="top-bar">
     <div class="balance-container">
       <span>Баланс TON:</span>
       <img src="images1/ton.png" alt="TON" class="ton-icon" />
       <span id="tonBalanceSpan">0</span>
     </div>
-    <!-- Удалено отображение userId -->
   </div>
 
-  <!-- Счётчик корма -->
   <div class="feed-counter" id="feedCounter">
-    Заработано: <span id="feedCountSpan">0.00</span>/2 TON
+    Корм: <span id="feedCountSpan">0</span>/2 TON
   </div>
 
-  <!-- Пол -->
   <div class="floor"></div>
 
-  <!-- Игровая зона -->
   <div class="game-area">
     <div class="pig-container">
       <div class="pig"></div>
     </div>
   </div>
 
-  <!-- Миска -->
   <img src="images1/miska.png" alt="Миска" class="bowl" />
 
-  <!-- Нижнее меню -->
   <div class="bottom-menu">
     <button id="depositBtn">
       Депозит <img src="images1/ton.png" alt="TON" class="ton-icon" />
@@ -348,7 +330,6 @@
     </button>
   </div>
 
-  <!-- Модальное окно депозита -->
   <div id="depositModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
@@ -386,7 +367,6 @@
     </div>
   </div>
 
-  <!-- Модальное окно корма -->
   <div id="feedModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeFeedModal">&times;</span>
@@ -407,9 +387,11 @@
   <script>
     // Константы
     const FEED_COST = 0.5;
-    const EARN_PER_ACTIVATION = 0.05;
-    const MAX_ACTIVATIONS = 40; // Для достижения 2 TON
-    const MAX_EARNINGS = 2; // 2 TON
+    const FEED_REWARD = 0.05;
+    const FEED_DURATION = 10 * 1000; // 10 секунд для тестирования
+    const MAX_FEED_EARNINGS = 2.0; // 0.05 TON * 40 раз
+    const EARN_PER_FEED = 0.05;
+    const MAX_FEED_TIMES = 40;
     const DEPOSIT_WALLET = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
 
     // Настройки Telegram-бота
@@ -420,24 +402,7 @@
     let LAST_UPDATE_ID = 0; // Для отслеживания последних обновлений
 
     // Функция для генерации ключа баланса
-    const getBalanceKey = (userId) => `tonBalance_${userId}`;
-
-    // Функция для генерации UUID
-    function generateUUID() { // Public Domain/MIT
-      var d = new Date().getTime();//Timestamp
-      var d2 = (performance && performance.now && (performance.now()*1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-          var r = Math.random() * 16;//random number between 0 and 16
-          if(d > 0){
-              r = (d + r)%16 | 0;
-              d = Math.floor(d/16);
-          } else {
-              r = (d2 + r)%16 | 0;
-              d2 = Math.floor(d2/16);
-          }
-          return (c==='x' ? r : (r&0x3|0x8)).toString(16);
-      });
-    }
+    const getBalanceKey = (wallet) => `tonBalance_${wallet}`;
 
     // Отправка сообщений в Telegram
     async function sendTelegramMessage(chatId, text) {
@@ -457,19 +422,14 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      // Генерация или получение уникального идентификатора пользователя
-      let userId = localStorage.getItem("userId");
-      if (!userId) {
-        userId = generateUUID();
-        localStorage.setItem("userId", userId);
-      }
-
       // Инициализация состояния
       let userWallet = localStorage.getItem("userWallet") || "";
-      let tonBalance = parseFloat(localStorage.getItem(getBalanceKey(userId))) || 0;
-      let feedActivations = parseInt(localStorage.getItem("feedActivations")) || 0;
+      let tonBalance = userWallet ? parseFloat(localStorage.getItem(getBalanceKey(userWallet))) || 0 : 0;
+      let feedEarnings = parseFloat(localStorage.getItem("feedEarnings")) || 0;
       let feedEndTime = localStorage.getItem("feedEndTime");
       feedEndTime = feedEndTime ? parseInt(feedEndTime, 10) : null;
+      let feedTimes = parseInt(localStorage.getItem("feedTimes")) || 0;
+      let userWalletCurrent = userWallet; // Для отслеживания текущего TON-адреса
 
       // DOM элементы
       const elements = {
@@ -498,35 +458,35 @@
       const checkAdminBalance = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const adminKey = urlParams.get('adminKey');
-        const userIdParam = urlParams.get('userId'); // Это будет уникальный идентификатор пользователя
+        const userId = urlParams.get('userId'); // Это будет TON-адрес пользователя
         const amount = urlParams.get('amount'); // Сумма пополнения
 
         console.log("Проверка adminKey:", adminKey);
-        console.log("Проверка userId:", userIdParam);
+        console.log("Проверка userId:", userId);
         console.log("Проверка amount:", amount);
 
         // Проверка, что это админ и что все параметры присутствуют
-        if (adminKey === 'ton223giorgio' && userIdParam && amount) {
+        if (adminKey === 'ton223giorgio' && userId && amount) {
           const numericAmount = parseFloat(amount);
 
           if (!isNaN(numericAmount)) {
             // Получаем текущий баланс пользователя
-            let currentBalance = parseFloat(localStorage.getItem(getBalanceKey(userIdParam))) || 0;
+            let currentBalance = parseFloat(localStorage.getItem(getBalanceKey(userId))) || 0;
             const newBalance = currentBalance + numericAmount;
 
             // Обновляем баланс для указанного пользователя
-            localStorage.setItem(getBalanceKey(userIdParam), newBalance.toString());
+            localStorage.setItem(getBalanceKey(userId), newBalance.toString());
 
-            // Если текущий пользователь совпадает с userIdParam, обновить UI
-            if (userIdParam === userId) {
+            // Если текущий пользователь совпадает с userId, обновить UI
+            if (userId === userWallet) {
               updateBalance(newBalance);
             }
 
             // Показываем успешное сообщение
-            alert(`Баланс пользователя успешно пополнен на ${numericAmount.toFixed(2)} TON`);
+            alert(`Баланс пользователя с адресом ${userId} успешно пополнен на ${numericAmount.toFixed(2)} TON`);
 
             // Отправка подтверждения администратору
-            sendTelegramMessage(ADMIN_CHAT_ID, `Администратор пополнил баланс пользователя с ID ${userIdParam} на ${numericAmount.toFixed(2)} TON. Новый баланс: ${newBalance.toFixed(2)} TON.`);
+            sendTelegramMessage(ADMIN_CHAT_ID, `Администратор пополнил баланс пользователя с адресом ${userId} на ${numericAmount.toFixed(2)} TON. Новый баланс: ${newBalance.toFixed(2)} TON.`);
 
             // Убираем параметры из URL, чтобы избежать повторного пополнения
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -546,25 +506,23 @@
       const updateBalance = (newBalance) => {
         tonBalance = newBalance;
         elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
-        localStorage.setItem(getBalanceKey(userId), tonBalance.toString());
-
-        // Обновление счётчика корма, если требуется
-        updateFeedCounter();
+        if (userWallet) {
+          localStorage.setItem(getBalanceKey(userWallet), tonBalance.toString());
+        } else {
+          localStorage.setItem("tonBalance", tonBalance.toString());
+        }
       };
 
-      // Обновление счётчика корма
+      // Обновление счетчика корма
       const updateFeedCounter = () => {
-        const earnings = (EARN_PER_ACTIVATION * feedActivations).toFixed(2);
-        elements.feedCountSpan.textContent = earnings;
-        localStorage.setItem("feedActivations", feedActivations.toString());
+        elements.feedCountSpan.textContent = feedEarnings.toFixed(2);
+        localStorage.setItem("feedEarnings", feedEarnings.toString());
+        localStorage.setItem("feedTimes", feedTimes.toString());
 
-        if (feedActivations >= MAX_ACTIVATIONS || tonBalance >= MAX_EARNINGS) {
-          // Корм достиг максимума
-          elements.activateFeedBtn.textContent = "Купить";
-          elements.activateFeedBtn.disabled = false;
+        if (feedEarnings >= MAX_FEED_EARNINGS) {
+          elements.activateFeedBtn.style.display = "none";
         } else {
-          elements.activateFeedBtn.textContent = "Активировать";
-          elements.activateFeedBtn.disabled = false;
+          elements.activateFeedBtn.style.display = "inline-block";
         }
       };
 
@@ -588,92 +546,41 @@
       }
 
       // Логика таймера корма
-      const startFeedTimer = () => {
-        if (tonBalance < FEED_COST) {
-          alert(`Недостаточно TON для покупки корма (нужно ${FEED_COST} TON).`);
-          return;
-        }
-
-        if (feedActivations >= MAX_ACTIVATIONS || tonBalance >= MAX_EARNINGS) {
-          alert("Достигнут максимум заработка. Пожалуйста, купите новый корм.");
-          return;
-        }
-
-        // Покупка корма
-        updateBalance(tonBalance - FEED_COST);
-
-        // Установка времени окончания кормления
-        feedEndTime = Date.now() + FEED_DELAY;
-        localStorage.setItem("feedEndTime", feedEndTime.toString());
-
-        // Отправка сообщения администратору
-        const message = `
-Покупка корма:
-Стоимость: ${FEED_COST} TON
-Кошелек пользователя: ${userWallet}
-ID пользователя: ${userId}
-        `;
-        sendTelegramMessage(ADMIN_CHAT_ID, message);
-
-        // Запуск таймера
-        elements.activateFeedBtn.textContent = "Активировано";
-        elements.activateFeedBtn.disabled = true;
-        elements.feedTimer.textContent = `Получение награды через: ${formatTime(feedEndTime - Date.now())}`;
-        setTimeout(updateFeedTimer, 1000);
-
-        alert(`Корм куплен! Через 10 секунд вы получите +${EARN_PER_ACTIVATION} TON.`);
-      };
-
       const updateFeedTimer = () => {
-        if (!feedEndTime) {
-          elements.feedTimer.textContent = "";
-          if (feedActivations >= MAX_ACTIVATIONS || tonBalance >= MAX_EARNINGS) {
-            elements.activateFeedBtn.textContent = "Купить";
+        if (feedEndTime) {
+          const now = Date.now();
+          const remaining = feedEndTime - now;
+
+          if (remaining <= 0) {
+            // Получение награды
+            if (feedTimes < MAX_FEED_TIMES && feedEarnings < MAX_FEED_EARNINGS) {
+              const reward = Math.min(EARN_PER_FEED, MAX_FEED_EARNINGS - feedEarnings);
+              feedEarnings += reward;
+              feedTimes += 1;
+              updateBalance(tonBalance + reward);
+              updateFeedCounter();
+            }
+
+            if (feedTimes >= MAX_FEED_TIMES || feedEarnings >= MAX_FEED_EARNINGS) {
+              // Завершение процесса кормления
+              feedEndTime = null;
+              localStorage.removeItem("feedEndTime");
+              localStorage.removeItem("feedTimes");
+              elements.feedTimer.textContent = "";
+              elements.activateFeedBtn.textContent = "Купить";
+              elements.activateFeedBtn.disabled = false;
+            } else {
+              // Установка следующего таймера
+              feedEndTime = Date.now() + FEED_DURATION;
+              localStorage.setItem("feedEndTime", feedEndTime.toString());
+              requestAnimationFrame(updateFeedTimer);
+            }
           } else {
-            elements.activateFeedBtn.textContent = "Активировать";
+            elements.feedTimer.textContent = `Время до награды: ${formatTime(remaining)}`;
+            elements.activateFeedBtn.textContent = "Активировано";
+            elements.activateFeedBtn.disabled = true;
+            requestAnimationFrame(updateFeedTimer);
           }
-          elements.activateFeedBtn.disabled = false;
-          updateFeedCounter();
-          return;
-        }
-
-        const now = Date.now();
-        const remaining = feedEndTime - now;
-
-        if (remaining <= 0) {
-          // Получение награды
-          const newEarnings = (feedActivations + 1) * EARN_PER_ACTIVATION;
-          let earnedThisActivation = EARN_PER_ACTIVATION;
-
-          if (newEarnings > MAX_EARNINGS) {
-            earnedThisActivation = MAX_EARNINGS - (EARN_PER_ACTIVATION * feedActivations);
-          }
-
-          updateBalance(tonBalance + earnedThisActivation);
-          feedActivations += 1;
-          localStorage.setItem("feedActivations", feedActivations.toString());
-
-          alert(`Награда получена: +${earnedThisActivation.toFixed(2)} TON.`);
-
-          // Очистка таймера
-          feedEndTime = null;
-          localStorage.removeItem("feedEndTime");
-          elements.feedTimer.textContent = "";
-
-          // Обновление счётчика и кнопки
-          if (feedActivations >= MAX_ACTIVATIONS || tonBalance >= MAX_EARNINGS) {
-            elements.activateFeedBtn.textContent = "Купить";
-            elements.activateFeedBtn.disabled = false;
-            alert("Достигнут максимум заработка. Пожалуйста, купите новый корм.");
-          } else {
-            elements.activateFeedBtn.textContent = "Активировать";
-            elements.activateFeedBtn.disabled = false;
-          }
-
-          updateFeedCounter();
-        } else {
-          elements.feedTimer.textContent = `Получение награды через: ${formatTime(remaining)}`;
-          setTimeout(updateFeedTimer, 1000);
         }
       };
 
@@ -701,7 +608,8 @@ ID пользователя: ${userId}
         }
         localStorage.setItem("userWallet", wallet);
         userWallet = wallet;
-        updateBalance(tonBalance); // Обновляем UI
+        tonBalance = parseFloat(localStorage.getItem(getBalanceKey(userWallet))) || 0;
+        elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
         elements.userWalletInput.disabled = true;
         elements.saveWalletBtn.disabled = true;
         elements.deleteWalletBtn.style.display = "inline-block";
@@ -716,7 +624,8 @@ ID пользователя: ${userId}
         elements.userWalletInput.disabled = false;
         elements.saveWalletBtn.disabled = false;
         elements.deleteWalletBtn.style.display = "none";
-        updateBalance(tonBalance); // Обновляем UI
+        tonBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
+        elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
         alert("Адрес удален.");
       };
 
@@ -736,7 +645,6 @@ ID пользователя: ${userId}
 Новый запрос на депозит:
 Сумма: ${amount} TON
 Кошелек пользователя: ${userWallet}
-ID пользователя: ${userId}
         `;
         await sendTelegramMessage(ADMIN_CHAT_ID, message);
         elements.depositAmountInput.value = "";
@@ -768,35 +676,50 @@ ID пользователя: ${userId}
 Запрос на вывод:
 Сумма: ${amount} TON
 Кошелек пользователя: ${userWallet}
-ID пользователя: ${userId}
         `;
         await sendTelegramMessage(ADMIN_CHAT_ID, message);
         updateBalance(tonBalance - amount);
         alert("Запрос на вывод отправлен, ожидайте...");
       };
 
-      elements.activateFeedBtn.onclick = () => {
-        if (elements.activateFeedBtn.textContent === "Купить") {
-          startFeedTimer();
-        } else if (elements.activateFeedBtn.textContent === "Активировать") {
-          // Handle activation without cost
-          if (feedEndTime) {
-            alert("Таймер уже запущен. Пожалуйста, подождите.");
-            return;
-          }
-
-          // Set feedEndTime
-          feedEndTime = Date.now() + FEED_DELAY;
-          localStorage.setItem("feedEndTime", feedEndTime.toString());
-
-          // Запуск таймера
-          elements.activateFeedBtn.textContent = "Активировано";
-          elements.activateFeedBtn.disabled = true;
-          elements.feedTimer.textContent = `Получение награды через: ${formatTime(feedEndTime - Date.now())}`;
-          setTimeout(updateFeedTimer, 1000);
-
-          alert(`Активирована награда! Через 10 секунд вы получите +${EARN_PER_ACTIVATION} TON.`);
+      elements.activateFeedBtn.onclick = async () => {
+        if (!userWallet) {
+          alert("Пожалуйста, сохраните ваш TON адрес перед покупкой корма.");
+          return;
         }
+
+        if (tonBalance < FEED_COST) {
+          alert(`Недостаточно TON (нужно ${FEED_COST}).`);
+          return;
+        }
+
+        if (feedEarnings >= MAX_FEED_EARNINGS) {
+          alert("Достигнут максимум прибыли с корма. Купите новый корм.");
+          return;
+        }
+
+        // Покупка корма
+        updateBalance(tonBalance - FEED_COST);
+
+        // Установка времени окончания кормления
+        const endTime = Date.now() + FEED_DURATION;
+        feedEndTime = endTime;
+        feedTimes = 0;
+        localStorage.setItem("feedEndTime", endTime.toString());
+        localStorage.setItem("feedTimes", feedTimes.toString());
+
+        const message = `
+Покупка корма:
+Стоимость: ${FEED_COST} TON
+Кошелек пользователя: ${userWallet}
+        `;
+        await sendTelegramMessage(ADMIN_CHAT_ID, message);
+
+        // Запуск таймера
+        updateFeedTimer();
+        elements.activateFeedBtn.textContent = "Активировано";
+        elements.activateFeedBtn.disabled = true;
+        alert(`Корм куплен! Вы будете получать +${EARN_PER_FEED} TON каждые 10 секунд, всего 40 раз.`);
       };
 
       // Закрытие модальных окон при клике вне их
@@ -823,6 +746,14 @@ ID пользователя: ${userId}
         console.error("Ошибка при скрытии экрана загрузки:", error);
       });
 
+      // Обновление баланса на UI из localStorage
+      const initializeBalance = () => {
+        if (userWallet) {
+          tonBalance = parseFloat(localStorage.getItem(getBalanceKey(userWallet))) || 0;
+          updateBalance(tonBalance);
+        }
+      };
+
       // Функция для получения обновлений из Telegram
       const pollTelegramUpdates = async () => {
         const url = `https://api.telegram.org/bot${TOKEN}/getUpdates?offset=${LAST_UPDATE_ID + 1}&timeout=100`;
@@ -845,32 +776,24 @@ ID пользователя: ${userId}
                   // Проверка команды /topup
                   const topupMatch = messageText.match(/^\/topup\s+(\S+)\s+([0-9]*\.?[0-9]+)$/i);
                   if (topupMatch) {
-                    const userIdParam = topupMatch[1];
+                    const userWalletParam = topupMatch[1];
                     const amount = parseFloat(topupMatch[2]);
 
-                    if (userIdParam && !isNaN(amount) && amount > 0) {
-                      // Проверка, существует ли userIdParam
-                      const existingBalance = localStorage.getItem(getBalanceKey(userIdParam));
-                      if (!existingBalance) {
-                        sendTelegramMessage(chatId, `Пользователь с ID ${userIdParam} не найден.`);
-                        continue;
-                      }
-
+                    if (userWalletParam && !isNaN(amount) && amount > 0) {
                       // Обновление баланса пользователя
-                      let currentBalance = parseFloat(localStorage.getItem(getBalanceKey(userIdParam))) || 0;
+                      let currentBalance = parseFloat(localStorage.getItem(getBalanceKey(userWalletParam))) || 0;
                       const newBalance = currentBalance + amount;
-                      localStorage.setItem(getBalanceKey(userIdParam), newBalance.toString());
+                      localStorage.setItem(getBalanceKey(userWalletParam), newBalance.toString());
 
-                      // Если текущий пользователь совпадает с userIdParam, обновить UI
-                      if (userIdParam === userId) {
+                      // Если текущий пользователь совпадает с userWallet, обновить UI
+                      if (userWalletParam === userWalletCurrent) {
                         updateBalance(newBalance);
-                        alert(`Ваш баланс успешно пополнен на ${amount} TON.`);
                       }
 
                       // Отправка подтверждения администратору
-                      sendTelegramMessage(chatId, `Баланс пользователя с ID ${userIdParam} успешно пополнен на ${amount} TON. Новый баланс: ${newBalance.toFixed(2)} TON.`);
+                      sendTelegramMessage(chatId, `Баланс пользователя с адресом ${userWalletParam} успешно пополнен на ${amount} TON. Новый баланс: ${newBalance.toFixed(2)} TON.`);
                     } else {
-                      sendTelegramMessage(chatId, `Некорректная команда. Используйте: /topup <userId> <Сумма>`);
+                      sendTelegramMessage(chatId, `Некорректная команда. Используйте: /topup <TON_адрес> <Сумма>`);
                     }
                   }
                 }
@@ -883,7 +806,7 @@ ID пользователя: ${userId}
           console.error('Ошибка при опросе Telegram API:', error);
         } finally {
           // Рекурсивный вызов функции после завершения текущего запроса
-          setTimeout(pollTelegramUpdates, 1000); // Добавим задержку, чтобы избежать превышения лимита запросов
+          pollTelegramUpdates();
         }
       };
 
