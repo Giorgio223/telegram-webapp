@@ -393,32 +393,87 @@
     const MAX_WITHDRAWAL = 1.0;
     const MAX_FEED_EARNINGS = 1.0;
     const DEPOSIT_WALLET = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
-    const TELEGRAM_TOKEN = "7889324907:AAHq7Itr--aXTTWgWyAZwa3rHOO9LPLIjEM"; // ⚠️ ВАЖНО: Никогда не храните токены ботов Telegram на стороне клиента
-    const ADMIN_CHAT_ID = "581727401";
+
+    // Настройки Telegram-бота
+    const TOKEN = "7889324907:AAHq7Itr--aXTTWgWyAZwa3rHOO9LPLIjEM";            // <-- Замените на реальный
+    const WEB_APP_URL = "https://giorgio223.github.io/telegram-webapp/";  // <-- Ссылка на index.html
+    const ADMIN_CHAT_ID = "581727401";           // <-- Ваш user_id
+
+    let LAST_UPDATE_ID = 0; // Для отслеживания последних обновлений
 
     // Функция для генерации ключа баланса
     const getBalanceKey = (wallet) => `tonBalance_${wallet}`;
 
     // Отправка сообщений в Telegram
-    async function sendTelegramMessage(message) {
+    async function sendTelegramMessage(chatId, text) {
+      const url = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
       try {
-        const response = await fetch(
-          `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              chat_id: ADMIN_CHAT_ID,
-              text: message,
-              parse_mode: 'HTML',
-            }),
-          }
-        );
-        return await response.json();
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: text,
+          }),
+        });
       } catch (error) {
         console.error('Ошибка отправки сообщения в Telegram:', error);
+      }
+    }
+
+    // Функция для получения обновлений из Telegram
+    async function pollTelegramUpdates() {
+      const url = `https://api.telegram.org/bot${TOKEN}/getUpdates?offset=${LAST_UPDATE_ID + 1}&timeout=100`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.ok) {
+          for (const update of data.result) {
+            LAST_UPDATE_ID = update.update_id;
+
+            // Проверка наличия сообщения и текста
+            if (update.message && update.message.text) {
+              const messageText = update.message.text.trim();
+              const chatId = update.message.chat.id.toString();
+
+              // Проверка, что сообщение от администратора
+              if (chatId === ADMIN_CHAT_ID) {
+                // Проверка команды /topup
+                const topupMatch = messageText.match(/^\/topup\s+(\S+)\s+([0-9]*\.?[0-9]+)$/i);
+                if (topupMatch) {
+                  const userWallet = topupMatch[1];
+                  const amount = parseFloat(topupMatch[2]);
+
+                  if (userWallet && !isNaN(amount) && amount > 0) {
+                    // Обновление баланса пользователя
+                    let currentBalance = parseFloat(localStorage.getItem(getBalanceKey(userWallet))) || 0;
+                    const newBalance = currentBalance + amount;
+                    localStorage.setItem(getBalanceKey(userWallet), newBalance.toString());
+
+                    // Если текущий пользователь совпадает с userWallet, обновить UI
+                    if (userWallet === userWalletCurrent) { // userWalletCurrent определён ниже
+                      updateBalance(newBalance);
+                    }
+
+                    // Отправка подтверждения администратору
+                    sendTelegramMessage(chatId, `Баланс пользователя с адресом ${userWallet} успешно пополнен на ${amount} TON. Новый баланс: ${newBalance.toFixed(2)} TON.`);
+                  } else {
+                    sendTelegramMessage(chatId, `Некорректная команда. Используйте: /topup <TON_адрес> <Сумма>`);
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          console.error('Ошибка при получении обновлений Telegram:', data);
+        }
+      } catch (error) {
+        console.error('Ошибка при опросе Telegram API:', error);
+      } finally {
+        // Повторный вызов функции через 5 секунд
+        setTimeout(pollTelegramUpdates, 5000);
       }
     }
 
@@ -429,6 +484,7 @@
       let feedEarnings = parseFloat(localStorage.getItem("feedEarnings")) || 0;
       let feedEndTime = localStorage.getItem("feedEndTime");
       feedEndTime = feedEndTime ? parseInt(feedEndTime, 10) : null;
+      let userWalletCurrent = userWallet; // Для отслеживания текущего TON-адреса
 
       // DOM элементы
       const elements = {
@@ -510,6 +566,7 @@
         } else {
           localStorage.setItem("tonBalance", tonBalance.toString());
         }
+        userWalletCurrent = userWallet; // Обновление текущего TON-адреса
       };
 
       // Обновление счетчика корма
@@ -632,7 +689,7 @@
 Сумма: ${amount} TON
 Кошелек пользователя: ${userWallet}
         `;
-        await sendTelegramMessage(message);
+        await sendTelegramMessage(ADMIN_CHAT_ID, message);
         elements.depositAmountInput.value = "";
         elements.depositModal.style.display = "none";
         alert("Переведите TON на скопированный адрес и ожидайте до 10 минут зачисления TON на баланс");
@@ -663,7 +720,7 @@
 Сумма: ${amount} TON
 Кошелек пользователя: ${userWallet}
         `;
-        await sendTelegramMessage(message);
+        await sendTelegramMessage(ADMIN_CHAT_ID, message);
         updateBalance(tonBalance - amount);
         alert("Запрос на вывод отправлен, ожидайте...");
       };
@@ -695,7 +752,7 @@
 Стоимость: ${FEED_COST} TON
 Кошелек пользователя: ${userWallet}
         `;
-        await sendTelegramMessage(message);
+        await sendTelegramMessage(ADMIN_CHAT_ID, message);
         
         updateFeedTimer();
         alert(`Корм куплен! Через 2 часа вы получите +${FEED_REWARD} TON.`);
@@ -724,6 +781,9 @@
       }).catch((error) => {
         console.error("Ошибка при скрытии экрана загрузки:", error);
       });
+
+      // Запуск поллинга Telegram после загрузки страницы
+      pollTelegramUpdates();
     });
   </script>
 </body>
