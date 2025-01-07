@@ -388,7 +388,7 @@
     // Константы
     const FEED_COST = 0.5;
     const FEED_REWARD = 0.05;
-    const FEED_DURATION = 10 * 1000; // 10 секунд для тестирования
+    const FEED_DURATION = 15 * 1000; // 15 секунд
     const MAX_FEED_EARNINGS = 2.0; // 0.05 TON * 40 раз
     const EARN_PER_FEED = 0.05;
     const MAX_FEED_TIMES = 40;
@@ -429,6 +429,10 @@
       let feedEndTime = localStorage.getItem("feedEndTime");
       feedEndTime = feedEndTime ? parseInt(feedEndTime, 10) : null;
       let feedTimes = parseInt(localStorage.getItem("feedTimes")) || 0;
+      let feedActive = localStorage.getItem("feedActive") === "true" || false;
+      let feedButtonState = localStorage.getItem("feedButtonState") || "buy"; // "buy" или "activate"
+      let feedTimerEnd = localStorage.getItem("feedTimerEnd");
+      feedTimerEnd = feedTimerEnd ? parseInt(feedTimerEnd, 10) : null;
       let userWalletCurrent = userWallet; // Для отслеживания текущего TON-адреса
 
       // DOM элементы
@@ -547,44 +551,44 @@
 
       // Логика таймера корма
       const updateFeedTimer = () => {
-        if (feedEndTime) {
+        if (feedTimerEnd) {
           const now = Date.now();
-          const remaining = feedEndTime - now;
+          const remaining = feedTimerEnd - now;
 
           if (remaining <= 0) {
-            // Получение награды
-            if (feedTimes < MAX_FEED_TIMES && feedEarnings < MAX_FEED_EARNINGS) {
-              const reward = Math.min(EARN_PER_FEED, MAX_FEED_EARNINGS - feedEarnings);
-              feedEarnings += reward;
-              feedTimes += 1;
-              updateBalance(tonBalance + reward);
-              updateFeedCounter();
-            }
+            // Добавление награды
+            feedEarnings += EARN_PER_FEED;
+            feedTimes += 1;
+            updateBalance(tonBalance + EARN_PER_FEED);
+            updateFeedCounter();
 
-            if (feedTimes >= MAX_FEED_TIMES || feedEarnings >= MAX_FEED_EARNINGS) {
-              // Завершение процесса кормления
-              feedEndTime = null;
-              localStorage.removeItem("feedEndTime");
-              localStorage.removeItem("feedTimes");
-              elements.feedTimer.textContent = "";
+            // Сброс таймера
+            feedTimerEnd = null;
+            localStorage.removeItem("feedTimerEnd");
+            localStorage.setItem("feedTimes", feedTimes.toString());
+            localStorage.setItem("feedEarnings", feedEarnings.toString());
+
+            if (feedTimes >= MAX_FEED_TIMES) {
+              // Достижение максимального количества активаций
+              feedButtonState = "buy";
+              localStorage.setItem("feedButtonState", feedButtonState);
               elements.activateFeedBtn.textContent = "Купить";
               elements.activateFeedBtn.disabled = false;
             } else {
-              // Установка следующего таймера
-              feedEndTime = Date.now() + FEED_DURATION;
-              localStorage.setItem("feedEndTime", feedEndTime.toString());
-              requestAnimationFrame(updateFeedTimer);
+              // Разрешить новую активацию
+              feedButtonState = "activate";
+              localStorage.setItem("feedButtonState", feedButtonState);
+              elements.activateFeedBtn.textContent = "Активировать";
+              elements.activateFeedBtn.disabled = false;
             }
           } else {
             elements.feedTimer.textContent = `Время до награды: ${formatTime(remaining)}`;
-            elements.activateFeedBtn.textContent = "Активировано";
-            elements.activateFeedBtn.disabled = true;
             requestAnimationFrame(updateFeedTimer);
           }
         }
       };
 
-      if (feedEndTime) {
+      if (feedTimerEnd) {
         updateFeedTimer();
       }
 
@@ -606,6 +610,17 @@
           alert("Пожалуйста, введите ваш TON адрес.");
           return;
         }
+
+        // Проверка уникальности кошелька
+        const existingKeys = Object.keys(localStorage).filter(key => key.startsWith("tonBalance_"));
+        for (const key of existingKeys) {
+          if (key === getBalanceKey(wallet) && wallet !== userWallet) {
+            alert("Введите другой кошелек, этот уже существует.");
+            return;
+          }
+        }
+
+        // Сохранение кошелька
         localStorage.setItem("userWallet", wallet);
         userWallet = wallet;
         tonBalance = parseFloat(localStorage.getItem(getBalanceKey(userWallet))) || 0;
@@ -661,7 +676,7 @@
         const amount = parseFloat(
           prompt(`Введите сумму для вывода (мин: 0.3, макс: 1.0 TON):`)
         );
-
+        
         if (!amount || amount < 0.3 || amount > 1.0) {
           alert(`Сумма должна быть от 0.3 до 1.0 TON.`);
           return;
@@ -688,38 +703,46 @@
           return;
         }
 
-        if (tonBalance < FEED_COST) {
-          alert(`Недостаточно TON (нужно ${FEED_COST}).`);
-          return;
-        }
+        if (feedButtonState === "buy") {
+          // Покупка корма
+          if (tonBalance < FEED_COST) {
+            alert(`Недостаточно TON (нужно ${FEED_COST}).`);
+            return;
+          }
 
-        if (feedEarnings >= MAX_FEED_EARNINGS) {
-          alert("Достигнут максимум прибыли с корма. Купите новый корм.");
-          return;
-        }
+          updateBalance(tonBalance - FEED_COST);
 
-        // Покупка корма
-        updateBalance(tonBalance - FEED_COST);
+          feedTimes = 0;
+          feedEarnings = 0;
+          localStorage.setItem("feedTimes", feedTimes.toString());
+          localStorage.setItem("feedEarnings", feedEarnings.toString());
 
-        // Установка времени окончания кормления
-        const endTime = Date.now() + FEED_DURATION;
-        feedEndTime = endTime;
-        feedTimes = 0;
-        localStorage.setItem("feedEndTime", endTime.toString());
-        localStorage.setItem("feedTimes", feedTimes.toString());
+          feedButtonState = "activate";
+          localStorage.setItem("feedButtonState", feedButtonState);
+          elements.activateFeedBtn.textContent = "Активировать";
 
-        const message = `
-Покупка корма:
-Стоимость: ${FEED_COST} TON
+          alert(`Корм куплен! Вы можете активировать корм до ${MAX_FEED_TIMES} раз для получения +${EARN_PER_FEED} TON каждые ${FEED_DURATION / 1000} секунд.`);
+
+          // Обновление UI
+          updateFeedCounter();
+        } else if (feedButtonState === "activate" && feedTimes < MAX_FEED_TIMES) {
+          // Активация корма
+          elements.activateFeedBtn.disabled = true;
+          feedTimerEnd = Date.now() + FEED_DURATION;
+          localStorage.setItem("feedTimerEnd", feedTimerEnd.toString());
+
+          elements.feedTimer.textContent = `Корм активирован! Награда будет через ${FEED_DURATION / 1000} секунд.`;
+          updateFeedTimer();
+
+          alert(`Корм активирован! Награда будет начислена через ${FEED_DURATION / 1000} секунд.`);
+
+          // Отправка сообщения в Telegram
+          const message = `
+Корм активирован:
 Кошелек пользователя: ${userWallet}
         `;
-        await sendTelegramMessage(ADMIN_CHAT_ID, message);
-
-        // Запуск таймера
-        updateFeedTimer();
-        elements.activateFeedBtn.textContent = "Активировано";
-        elements.activateFeedBtn.disabled = true;
-        alert(`Корм куплен! Вы будете получать +${EARN_PER_FEED} TON каждые 10 секунд, всего 40 раз.`);
+          await sendTelegramMessage(ADMIN_CHAT_ID, message);
+        }
       };
 
       // Закрытие модальных окон при клике вне их
@@ -806,12 +829,29 @@
           console.error('Ошибка при опросе Telegram API:', error);
         } finally {
           // Рекурсивный вызов функции после завершения текущего запроса
-          pollTelegramUpdates();
+          setTimeout(pollTelegramUpdates, 1000); // Добавляем задержку, чтобы избежать перегрузки
         }
       };
 
       // Запуск поллинга Telegram после загрузки страницы
       pollTelegramUpdates();
+
+      // Функция для инициализации состояния корма при загрузке
+      const initializeFeedState = () => {
+        if (feedButtonState === "activate" && feedTimes < MAX_FEED_TIMES) {
+          elements.activateFeedBtn.textContent = "Активировать";
+          if (feedTimerEnd && Date.now() < feedTimerEnd) {
+            updateFeedTimer();
+          } else {
+            // Если таймер истёк, разрешить новую активацию
+            elements.activateFeedBtn.disabled = false;
+          }
+        } else {
+          elements.activateFeedBtn.textContent = "Купить";
+        }
+      };
+
+      initializeFeedState();
     });
   </script>
 </body>
