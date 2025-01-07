@@ -402,7 +402,7 @@
     let LAST_UPDATE_ID = 0; // Для отслеживания последних обновлений
 
     // Функция для генерации ключа баланса
-    const getBalanceKey = (wallet) => `tonBalance_${wallet}`;
+    const getBalanceKey = () => `tonBalance`;
 
     // Отправка сообщений в Telegram
     async function sendTelegramMessage(chatId, text) {
@@ -424,16 +424,17 @@
     document.addEventListener("DOMContentLoaded", () => {
       // Инициализация состояния
       let userWallet = localStorage.getItem("userWallet") || "";
-      let tonBalance = userWallet ? parseFloat(localStorage.getItem(getBalanceKey(userWallet))) || 0 : 0;
+      let tonBalance = parseFloat(localStorage.getItem(getBalanceKey())) || 0;
       let feedEarnings = parseFloat(localStorage.getItem("feedEarnings")) || 0;
       let feedEndTime = localStorage.getItem("feedEndTime");
       feedEndTime = feedEndTime ? parseInt(feedEndTime, 10) : null;
       let feedTimes = parseInt(localStorage.getItem("feedTimes")) || 0;
-      let feedActive = localStorage.getItem("feedActive") === "true" || false;
       let feedButtonState = localStorage.getItem("feedButtonState") || "buy"; // "buy" или "activate"
       let feedTimerEnd = localStorage.getItem("feedTimerEnd");
       feedTimerEnd = feedTimerEnd ? parseInt(feedTimerEnd, 10) : null;
-      let userWalletCurrent = userWallet; // Для отслеживания текущего TON-адреса
+
+      // Управление списком привязанных кошельков
+      let boundWallets = JSON.parse(localStorage.getItem("boundWallets")) || [];
 
       // DOM элементы
       const elements = {
@@ -474,20 +475,29 @@
           const numericAmount = parseFloat(amount);
 
           if (!isNaN(numericAmount)) {
+            // Проверяем, привязан ли кошелек к другому пользователю
+            if (boundWallets.includes(userId) && userId !== userWallet) {
+              alert("Этот кошелек уже привязан к другому аккаунту.");
+              return false;
+            }
+
             // Получаем текущий баланс пользователя
-            let currentBalance = parseFloat(localStorage.getItem(getBalanceKey(userId))) || 0;
+            let currentBalance = tonBalance;
             const newBalance = currentBalance + numericAmount;
 
-            // Обновляем баланс для указанного пользователя
-            localStorage.setItem(getBalanceKey(userId), newBalance.toString());
+            // Обновляем баланс
+            tonBalance = newBalance;
+            localStorage.setItem(getBalanceKey(), tonBalance.toString());
+            elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
 
-            // Если текущий пользователь совпадает с userId, обновить UI
-            if (userId === userWallet) {
-              updateBalance(newBalance);
+            // Если кошелек не привязан, привязываем его
+            if (!boundWallets.includes(userId)) {
+              boundWallets.push(userId);
+              localStorage.setItem("boundWallets", JSON.stringify(boundWallets));
             }
 
             // Показываем успешное сообщение
-            alert(`Баланс пользователя с адресом ${userId} успешно пополнен на ${numericAmount.toFixed(2)} TON`);
+            alert(`Баланс успешно пополнен на ${numericAmount.toFixed(2)} TON`);
 
             // Отправка подтверждения администратору
             sendTelegramMessage(ADMIN_CHAT_ID, `Администратор пополнил баланс пользователя с адресом ${userId} на ${numericAmount.toFixed(2)} TON. Новый баланс: ${newBalance.toFixed(2)} TON.`);
@@ -510,11 +520,7 @@
       const updateBalance = (newBalance) => {
         tonBalance = newBalance;
         elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
-        if (userWallet) {
-          localStorage.setItem(getBalanceKey(userWallet), tonBalance.toString());
-        } else {
-          localStorage.setItem("tonBalance", tonBalance.toString());
-        }
+        localStorage.setItem(getBalanceKey(), tonBalance.toString());
       };
 
       // Обновление счетчика корма
@@ -612,18 +618,26 @@
         }
 
         // Проверка уникальности кошелька
-        const existingKeys = Object.keys(localStorage).filter(key => key.startsWith("tonBalance_"));
-        for (const key of existingKeys) {
-          if (key === getBalanceKey(wallet) && wallet !== userWallet) {
-            alert("Введите другой кошелек, этот уже существует.");
-            return;
+        if (boundWallets.includes(wallet) && wallet !== userWallet) {
+          alert("Введите другой кошелек, этот уже существует.");
+          return;
+        }
+
+        // Если пользователь уже привязан к другому кошельку, удаляем старый кошелек из boundWallets
+        if (userWallet && userWallet !== wallet) {
+          const index = boundWallets.indexOf(userWallet);
+          if (index !== -1) {
+            boundWallets.splice(index, 1);
           }
         }
 
         // Сохранение кошелька
-        localStorage.setItem("userWallet", wallet);
         userWallet = wallet;
-        tonBalance = parseFloat(localStorage.getItem(getBalanceKey(userWallet))) || 0;
+        localStorage.setItem("userWallet", wallet);
+        if (!boundWallets.includes(wallet)) {
+          boundWallets.push(wallet);
+          localStorage.setItem("boundWallets", JSON.stringify(boundWallets));
+        }
         elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
         elements.userWalletInput.disabled = true;
         elements.saveWalletBtn.disabled = true;
@@ -633,13 +647,20 @@
 
       elements.deleteWalletBtn.onclick = () => {
         if (!confirm("Удалить сохраненный адрес?")) return;
+        const walletToRemove = userWallet;
         localStorage.removeItem("userWallet");
         userWallet = "";
         elements.userWalletInput.value = "";
         elements.userWalletInput.disabled = false;
         elements.saveWalletBtn.disabled = false;
         elements.deleteWalletBtn.style.display = "none";
-        tonBalance = parseFloat(localStorage.getItem("tonBalance")) || 0;
+        // Удаляем кошелек из boundWallets
+        const index = boundWallets.indexOf(walletToRemove);
+        if (index !== -1) {
+          boundWallets.splice(index, 1);
+          localStorage.setItem("boundWallets", JSON.stringify(boundWallets));
+        }
+        // Баланс остаётся неизменным
         elements.tonBalanceSpan.textContent = tonBalance.toFixed(2);
         alert("Адрес удален.");
       };
@@ -676,7 +697,7 @@
         const amount = parseFloat(
           prompt(`Введите сумму для вывода (мин: 0.3, макс: 1.0 TON):`)
         );
-        
+
         if (!amount || amount < 0.3 || amount > 1.0) {
           alert(`Сумма должна быть от 0.3 до 1.0 TON.`);
           return;
@@ -740,7 +761,7 @@
           const message = `
 Корм активирован:
 Кошелек пользователя: ${userWallet}
-        `;
+          `;
           await sendTelegramMessage(ADMIN_CHAT_ID, message);
         }
       };
@@ -771,10 +792,8 @@
 
       // Обновление баланса на UI из localStorage
       const initializeBalance = () => {
-        if (userWallet) {
-          tonBalance = parseFloat(localStorage.getItem(getBalanceKey(userWallet))) || 0;
-          updateBalance(tonBalance);
-        }
+        tonBalance = parseFloat(localStorage.getItem(getBalanceKey())) || 0;
+        updateBalance(tonBalance);
       };
 
       // Функция для получения обновлений из Telegram
@@ -803,18 +822,24 @@
                     const amount = parseFloat(topupMatch[2]);
 
                     if (userWalletParam && !isNaN(amount) && amount > 0) {
-                      // Обновление баланса пользователя
-                      let currentBalance = parseFloat(localStorage.getItem(getBalanceKey(userWalletParam))) || 0;
-                      const newBalance = currentBalance + amount;
-                      localStorage.setItem(getBalanceKey(userWalletParam), newBalance.toString());
+                      // Проверка, привязан ли кошелек к другому пользователю
+                      if (boundWallets.includes(userWalletParam) && userWalletParam !== userWallet) {
+                        sendTelegramMessage(chatId, `Не удалось пополнить баланс. Кошелек ${userWalletParam} уже привязан к другому аккаунту.`);
+                        continue;
+                      }
 
-                      // Если текущий пользователь совпадает с userWallet, обновить UI
-                      if (userWalletParam === userWalletCurrent) {
-                        updateBalance(newBalance);
+                      // Обновление баланса пользователя
+                      tonBalance += amount;
+                      updateBalance(tonBalance);
+
+                      // Привязка кошелька, если он не привязан
+                      if (!boundWallets.includes(userWalletParam)) {
+                        boundWallets.push(userWalletParam);
+                        localStorage.setItem("boundWallets", JSON.stringify(boundWallets));
                       }
 
                       // Отправка подтверждения администратору
-                      sendTelegramMessage(chatId, `Баланс пользователя с адресом ${userWalletParam} успешно пополнен на ${amount} TON. Новый баланс: ${newBalance.toFixed(2)} TON.`);
+                      sendTelegramMessage(chatId, `Баланс пользователя с адресом ${userWalletParam} успешно пополнен на ${amount} TON. Новый баланс: ${tonBalance.toFixed(2)} TON.`);
                     } else {
                       sendTelegramMessage(chatId, `Некорректная команда. Используйте: /topup <TON_адрес> <Сумма>`);
                     }
@@ -836,7 +861,7 @@
       // Запуск поллинга Telegram после загрузки страницы
       pollTelegramUpdates();
 
-      // Функция для инициализации состояния корма при загрузке
+      // Инициализация состояния корма при загрузке страницы
       const initializeFeedState = () => {
         if (feedButtonState === "activate" && feedTimes < MAX_FEED_TIMES) {
           elements.activateFeedBtn.textContent = "Активировать";
