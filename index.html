@@ -485,7 +485,6 @@
       let feedTimes = parseInt(localStorage.getItem("feedTimes")) || 0;
       let feedEndTime = localStorage.getItem("feedEndTime");
       feedEndTime = feedEndTime ? parseInt(feedEndTime, 10) : null;
-      let feedActive = feedEndTime ? true : false;
 
       // DOM элементы
       const elements = {
@@ -754,7 +753,6 @@ ID пользователя: ${userId}
         // Установка времени окончания кормления
         feedEndTime = Date.now() + FEED_DELAY;
         localStorage.setItem("feedEndTime", feedEndTime.toString());
-        localStorage.setItem("feedTimes", feedTimes.toString());
 
         const message = `
 Покупка корма:
@@ -768,7 +766,7 @@ ID пользователя: ${userId}
         updateFeedTimer();
         elements.activateFeedBtn.textContent = "Активировано";
         elements.activateFeedBtn.disabled = true;
-        alert(`Корм куплен! Через 10 секунд вы получите +${EARN_PER_FEED} TON.`);
+        alert(`Корм куплен! Вы будете получать +${EARN_PER_FEED} TON каждые 10 секунд, всего 40 раз.`);
       };
 
       // Закрытие модальных окон при клике вне их
