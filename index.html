@@ -75,13 +75,6 @@
       gap: 6px;
     }
 
-    .user-id-container {
-      display: flex;
-      align-items: center;
-      font-size: clamp(0.8rem, 3vw, 1rem);
-      gap: 6px;
-    }
-
     .ton-icon {
       width: 20px;
       height: 20px;
@@ -321,10 +314,7 @@
       <img src="images1/ton.png" alt="TON" class="ton-icon" />
       <span id="tonBalanceSpan">0</span>
     </div>
-    <div class="user-id-container">
-      <span>Ваш ID:</span>
-      <span id="userIdSpan">...</span>
-    </div>
+    <!-- Удалено отображение userId -->
   </div>
 
   <!-- Счётчик корма -->
@@ -410,7 +400,7 @@
         <img src="images1/ton.png" alt="TON" class="ton-icon" />
       </div>
       <div id="feedTimer" class="feed-timer"></div>
-      <button class="action-button" id="activateFeedBtn">Купить</button>
+      <button class="action-button" id="activateFeedBtn">Активировать</button>
     </div>
   </div>
 
@@ -418,7 +408,7 @@
     // Константы
     const FEED_COST = 0.5;
     const EARN_PER_FEED = 0.05;
-    const FEED_DELAY = 10 * 1000; // 10 секунд для тестирования
+    const FEED_DELAY = 10 * 1000; // 10 секунд
     const MAX_FEEDS = 40; // Максимум 40 раз
     const MAX_FEED_EARNINGS = EARN_PER_FEED * MAX_FEEDS; // 2 TON
     const DEPOSIT_WALLET = "UQAcbOfWzft7K_KlweEcVsrJhchZfYl-FrMjpzOa8Y4cs8Lq";
@@ -474,10 +464,6 @@
         userId = generateUUID();
         localStorage.setItem("userId", userId);
       }
-
-      // Отображение userId в UI
-      const userIdSpan = document.getElementById("userIdSpan");
-      userIdSpan.textContent = userId;
 
       // Инициализация состояния
       let userWallet = localStorage.getItem("userWallet") || "";
@@ -568,6 +554,15 @@
       const updateFeedCounter = () => {
         elements.feedCountSpan.textContent = feedTimes;
         localStorage.setItem("feedTimes", feedTimes.toString());
+
+        if (feedTimes >= MAX_FEEDS) {
+          // Корм достиг максимума
+          elements.activateFeedBtn.textContent = "Максимум активировано";
+          elements.activateFeedBtn.disabled = true;
+        } else {
+          elements.activateFeedBtn.textContent = "Активировать";
+          elements.activateFeedBtn.disabled = false;
+        }
       };
 
       // Форматирование времени
@@ -590,46 +585,78 @@
       }
 
       // Логика таймера корма
+      const startFeedTimer = () => {
+        if (feedTimes >= MAX_FEEDS) {
+          alert("Достигнут максимум активаций корма. Пожалуйста, купите новый корм.");
+          return;
+        }
+
+        if (tonBalance < FEED_COST) {
+          alert(`Недостаточно TON для покупки корма (нужно ${FEED_COST} TON).`);
+          return;
+        }
+
+        // Покупка корма
+        updateBalance(tonBalance - FEED_COST);
+        feedTimes += 1;
+        updateFeedCounter();
+
+        // Установка времени окончания кормления
+        feedEndTime = Date.now() + FEED_DELAY;
+        localStorage.setItem("feedEndTime", feedEndTime.toString());
+        localStorage.setItem("feedTimes", feedTimes.toString());
+
+        // Отправка сообщения администратору
+        const message = `
+Покупка корма:
+Стоимость: ${FEED_COST} TON
+Кошелек пользователя: ${userWallet}
+ID пользователя: ${userId}
+        `;
+        sendTelegramMessage(ADMIN_CHAT_ID, message);
+
+        // Запуск таймера
+        elements.activateFeedBtn.textContent = "Активировано";
+        elements.activateFeedBtn.disabled = true;
+        elements.feedTimer.textContent = `Ожидание награды: ${formatTime(feedEndTime - Date.now())}`;
+        setTimeout(updateFeedTimer, 1000);
+
+        alert(`Корм куплен! Награда будет получена через 10 секунд.`);
+      };
+
       const updateFeedTimer = () => {
-        if (feedEndTime) {
-          const now = Date.now();
-          const remaining = feedEndTime - now;
+        if (!feedEndTime) {
+          elements.feedTimer.textContent = "";
+          elements.activateFeedBtn.textContent = "Активировать";
+          elements.activateFeedBtn.disabled = false;
+          return;
+        }
 
-          if (remaining <= 0) {
-            // Получение награды
-            if (feedTimes < MAX_FEEDS && tonBalance + EARN_PER_FEED <= MAX_FEED_EARNINGS) {
-              const reward = EARN_PER_FEED;
-              tonBalance += reward;
-              feedTimes += 1;
-              updateBalance(tonBalance);
-              updateFeedCounter();
+        const now = Date.now();
+        const remaining = feedEndTime - now;
 
-              // Установка следующего таймера, если лимит не достигнут
-              if (feedTimes < MAX_FEEDS) {
-                feedEndTime = Date.now() + FEED_DELAY;
-                localStorage.setItem("feedEndTime", feedEndTime.toString());
-                elements.feedTimer.textContent = `Награда получена: +${reward} TON`;
-                setTimeout(updateFeedTimer, 1000);
-              } else {
-                // Завершение процесса кормления
-                feedEndTime = null;
-                localStorage.removeItem("feedEndTime");
-                elements.feedTimer.textContent = "";
-                elements.activateFeedBtn.textContent = "Максимум активировано";
-                elements.activateFeedBtn.disabled = true;
-              }
-            } else {
-              // Завершение процесса кормления
-              feedEndTime = null;
-              localStorage.removeItem("feedEndTime");
-              elements.feedTimer.textContent = "";
-              elements.activateFeedBtn.textContent = "Максимум активировано";
-              elements.activateFeedBtn.disabled = true;
-            }
-          } else {
-            elements.feedTimer.textContent = `Время до награды: ${formatTime(remaining)}`;
-            setTimeout(updateFeedTimer, 1000);
+        if (remaining <= 0) {
+          // Получение награды
+          if (feedTimes < MAX_FEEDS && tonBalance + EARN_PER_FEED <= MAX_FEED_EARNINGS) {
+            const reward = EARN_PER_FEED;
+            updateBalance(tonBalance + reward);
+            elements.feedTimer.textContent = `Награда получена: +${reward.toFixed(2)} TON`;
           }
+
+          // Очистка таймера
+          feedEndTime = null;
+          localStorage.removeItem("feedEndTime");
+          elements.feedTimer.textContent = "";
+          elements.activateFeedBtn.textContent = "Активировать";
+          elements.activateFeedBtn.disabled = false;
+
+          if (feedTimes >= MAX_FEEDS) {
+            elements.activateFeedBtn.textContent = "Максимум активировано";
+            elements.activateFeedBtn.disabled = true;
+          }
+        } else {
+          elements.feedTimer.textContent = `Ожидание награды: ${formatTime(remaining)}`;
+          setTimeout(updateFeedTimer, 1000);
         }
       };
 
@@ -731,42 +758,8 @@ ID пользователя: ${userId}
         alert("Запрос на вывод отправлен, ожидайте...");
       };
 
-      elements.activateFeedBtn.onclick = async () => {
-        if (!userWallet) {
-          alert("Пожалуйста, сохраните ваш TON адрес перед покупкой корма.");
-          return;
-        }
-
-        if (tonBalance < FEED_COST) {
-          alert(`Недостаточно TON (нужно ${FEED_COST}).`);
-          return;
-        }
-
-        if (feedTimes >= MAX_FEEDS) {
-          alert("Достигнут максимум активаций корма.");
-          return;
-        }
-
-        // Покупка корма
-        updateBalance(tonBalance - FEED_COST);
-
-        // Установка времени окончания кормления
-        feedEndTime = Date.now() + FEED_DELAY;
-        localStorage.setItem("feedEndTime", feedEndTime.toString());
-
-        const message = `
-Покупка корма:
-Стоимость: ${FEED_COST} TON
-Кошелек пользователя: ${userWallet}
-ID пользователя: ${userId}
-        `;
-        await sendTelegramMessage(ADMIN_CHAT_ID, message);
-
-        // Запуск таймера
-        updateFeedTimer();
-        elements.activateFeedBtn.textContent = "Активировано";
-        elements.activateFeedBtn.disabled = true;
-        alert(`Корм куплен! Вы будете получать +${EARN_PER_FEED} TON каждые 10 секунд, всего 40 раз.`);
+      elements.activateFeedBtn.onclick = () => {
+        startFeedTimer();
       };
 
       // Закрытие модальных окон при клике вне их
@@ -819,6 +812,13 @@ ID пользователя: ${userId}
                     const amount = parseFloat(topupMatch[2]);
 
                     if (userIdParam && !isNaN(amount) && amount > 0) {
+                      // Проверка, существует ли userIdParam
+                      const existingBalance = localStorage.getItem(getBalanceKey(userIdParam));
+                      if (!existingBalance) {
+                        sendTelegramMessage(chatId, `Пользователь с ID ${userIdParam} не найден.`);
+                        continue;
+                      }
+
                       // Обновление баланса пользователя
                       let currentBalance = parseFloat(localStorage.getItem(getBalanceKey(userIdParam))) || 0;
                       const newBalance = currentBalance + amount;
@@ -846,7 +846,7 @@ ID пользователя: ${userId}
           console.error('Ошибка при опросе Telegram API:', error);
         } finally {
           // Рекурсивный вызов функции после завершения текущего запроса
-          pollTelegramUpdates();
+          setTimeout(pollTelegramUpdates, 1000); // Добавим задержку, чтобы избежать превышения лимита запросов
         }
       };
 
