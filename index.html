@@ -6,7 +6,7 @@
   <title>Свинка и TON</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
   <style>
-    /* Ваши стили остаются без изменений */
+    /* Основные стили */
     :root {
       --primary-color: #8B4513;
       --secondary-color: #A0522D;
@@ -54,18 +54,28 @@
 
     .top-bar {
       position: fixed;
-      inset: 0 0 auto 0;
-      height: 50px;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
       background: #333333;
       color: var(--text-color);
       display: flex;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: space-between;
       padding: 0 20px;
       z-index: 100;
+      box-sizing: border-box;
     }
 
     .balance-container {
+      display: flex;
+      align-items: center;
+      font-size: clamp(0.8rem, 3vw, 1rem);
+      gap: 6px;
+    }
+
+    .user-id-container {
       display: flex;
       align-items: center;
       font-size: clamp(0.8rem, 3vw, 1rem);
@@ -80,17 +90,20 @@
 
     .floor {
       position: fixed;
-      inset: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100px;
       background: url("images1/floor.png") no-repeat center/cover;
       z-index: 1;
     }
 
     .game-area {
       position: absolute;
-      top: 50px;
+      top: 60px;
       left: 0;
       width: 100%;
-      height: calc(100% - 130px);
+      height: calc(100% - 160px);
       z-index: 3;
       overflow: hidden;
     }
@@ -102,8 +115,8 @@
       z-index: 4;
       transform: translate(-50%, -50%);
       animation: horizontalMove 4s infinite alternate ease-in-out;
-      width: 250px; /* Установите фиксированную ширину для стабильности */
-      height: 250px; /* Установите фиксированную высоту для стабильности */
+      width: 250px; /* Фиксированная ширина для стабильности */
+      height: 250px; /* Фиксированная высота для стабильности */
     }
 
     @keyframes horizontalMove {
@@ -115,7 +128,7 @@
       width: 100%;
       height: 100%;
       background: url("images1/pig223.png") center center no-repeat;
-      background-size: contain; /* Обеспечивает полное отображение изображения */
+      background-size: contain; /* Полное отображение изображения */
       animation: walk 1s steps(2) infinite;
     }
 
@@ -136,7 +149,7 @@
     .feed-counter {
       position: fixed;
       right: 20px;
-      top: 60px;
+      top: 80px;
       background: var(--primary-color);
       color: var(--text-color);
       padding: 10px;
@@ -147,7 +160,9 @@
 
     .bottom-menu {
       position: fixed;
-      inset: auto 0 0 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
       height: 80px;
       background: var(--secondary-color);
       border-top: 2px solid var(--border-color);
@@ -294,32 +309,43 @@
   </style>
 </head>
 <body>
+  <!-- Экран загрузки -->
   <div class="loading-screen" id="loadingScreen">
     <div class="loading-text">Загрузка...</div>
   </div>
 
+  <!-- Верхняя панель -->
   <div class="top-bar">
     <div class="balance-container">
       <span>Баланс TON:</span>
       <img src="images1/ton.png" alt="TON" class="ton-icon" />
       <span id="tonBalanceSpan">0</span>
     </div>
+    <div class="user-id-container">
+      <span>Ваш ID:</span>
+      <span id="userIdSpan">...</span>
+    </div>
   </div>
 
+  <!-- Счётчик корма -->
   <div class="feed-counter" id="feedCounter">
-    Корм: <span id="feedCountSpan">0</span>/2 TON
+    Корм: <span id="feedCountSpan">0</span>/40
   </div>
 
+  <!-- Пол -->
   <div class="floor"></div>
 
+  <!-- Игровая зона -->
   <div class="game-area">
     <div class="pig-container">
       <div class="pig"></div>
     </div>
   </div>
 
+  <!-- Миска -->
   <img src="images1/miska.png" alt="Миска" class="bowl" />
 
+  <!-- Нижнее меню -->
   <div class="bottom-menu">
     <button id="depositBtn">
       Депозит <img src="images1/ton.png" alt="TON" class="ton-icon" />
@@ -332,6 +358,7 @@
     </button>
   </div>
 
+  <!-- Модальное окно депозита -->
   <div id="depositModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
@@ -369,6 +396,7 @@
     </div>
   </div>
 
+  <!-- Модальное окно корма -->
   <div id="feedModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeFeedModal">&times;</span>
@@ -446,6 +474,10 @@
         userId = generateUUID();
         localStorage.setItem("userId", userId);
       }
+
+      // Отображение userId в UI
+      const userIdSpan = document.getElementById("userIdSpan");
+      userIdSpan.textContent = userId;
 
       // Инициализация состояния
       let userWallet = localStorage.getItem("userWallet") || "";
@@ -577,7 +609,8 @@
               if (feedTimes < MAX_FEEDS) {
                 feedEndTime = Date.now() + FEED_DELAY;
                 localStorage.setItem("feedEndTime", feedEndTime.toString());
-                requestAnimationFrame(updateFeedTimer);
+                elements.feedTimer.textContent = `Награда получена: +${reward} TON`;
+                setTimeout(updateFeedTimer, 1000);
               } else {
                 // Завершение процесса кормления
                 feedEndTime = null;
@@ -596,8 +629,6 @@
             }
           } else {
             elements.feedTimer.textContent = `Время до награды: ${formatTime(remaining)}`;
-            elements.activateFeedBtn.textContent = "Активировано";
-            elements.activateFeedBtn.disabled = true;
             setTimeout(updateFeedTimer, 1000);
           }
         }
@@ -662,6 +693,7 @@
 Новый запрос на депозит:
 Сумма: ${amount} TON
 Кошелек пользователя: ${userWallet}
+ID пользователя: ${userId}
         `;
         await sendTelegramMessage(ADMIN_CHAT_ID, message);
         elements.depositAmountInput.value = "";
@@ -693,6 +725,7 @@
 Запрос на вывод:
 Сумма: ${amount} TON
 Кошелек пользователя: ${userWallet}
+ID пользователя: ${userId}
         `;
         await sendTelegramMessage(ADMIN_CHAT_ID, message);
         updateBalance(tonBalance - amount);
@@ -727,6 +760,7 @@
 Покупка корма:
 Стоимость: ${FEED_COST} TON
 Кошелек пользователя: ${userWallet}
+ID пользователя: ${userId}
         `;
         await sendTelegramMessage(ADMIN_CHAT_ID, message);
 
@@ -795,6 +829,7 @@
                       // Если текущий пользователь совпадает с userIdParam, обновить UI
                       if (userIdParam === userId) {
                         updateBalance(newBalance);
+                        alert(`Ваш баланс успешно пополнен на ${amount} TON.`);
                       }
 
                       // Отправка подтверждения администратору
